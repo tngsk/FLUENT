@@ -1,0 +1,21 @@
+[
+  {
+    "id": "color",
+    "type": "color-picker",
+    "label": "色彩"
+  },
+  {
+    "id": "mood",
+    "type": "dropdown",
+    "options": ["Bright", "Dark", "Neutral"],
+    "label": "印象"
+  },
+  {
+    "id": "intensity",
+    "type": "slider",
+    "min": 0,
+    "max": 1,
+    "step": 0.1,
+    "label": "強度"
+  }
+]
