@@ -18,6 +18,7 @@ import express from "express";
 import fs from "fs/promises";
 import { constants } from "fs";
 import { spawn } from "child_process";
+import cors from "cors";
 
 // --- 環境変数（未設定の場合はデフォルト値を使用） ---
 const DATA_DIR = path.resolve(__dirname, "..", process.env.DATA_DIR || "data");
@@ -28,8 +29,11 @@ const PYTHON_BIN = path.resolve(
 );
 const ROOT_DIR = path.resolve(__dirname, "..");
 const PORT = process.env.PORT || 3000;
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "http://localhost:5173").split(",");
 
 const app = express();
+
+app.use(cors({ origin: ALLOWED_ORIGINS }));
 app.use(express.json());
 
 // data/ フォルダを静的配信（音声ファイルをブラウザから直接再生するため）
@@ -143,7 +147,12 @@ const spawnPython = (script, args = []) =>
 app.post("/api/predict", async (req, res) => {
   const { id } = req.body;
   try {
-    const { out, code } = await spawnPython("python/predict.py");
+    const args = [
+      "--dataset", path.join(DATA_DIR, "dataset.json"),
+      "--model", path.join(DATA_DIR, "model.pkl")
+    ];
+    if (id) args.push("--id", id);
+    const { out, code } = await spawnPython("python/predict.py", args);
     if (code === 2)
       return res.json({ success: false, message: "model_not_found" });
     const predictions = JSON.parse(out);
@@ -166,7 +175,12 @@ app.post("/api/train", (req, res) => {
 
   const alpha = parseFloat(req.body.alpha) || 0.01;
   const resume = req.body.resume === true;
-  const args = ["--alpha", String(alpha)];
+  const args = [
+    "--alpha", String(alpha),
+    "--dataset", path.join(DATA_DIR, "dataset.json"),
+    "--labelset", path.join(DATA_DIR, "labelset.json"),
+    "--model", path.join(DATA_DIR, "model.pkl")
+  ];
   if (resume) args.push("--resume");
 
   const proc = spawn(
