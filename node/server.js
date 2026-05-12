@@ -126,7 +126,12 @@ const spawnPython = (script, args = []) =>
 app.post("/api/predict", async (req, res) => {
   const { id } = req.body;
   try {
-    const { out, code } = await spawnPython("python/predict.py");
+    const args = [
+      "--dataset", path.join(DATA_DIR, "dataset.json"),
+      "--model", path.join(DATA_DIR, "model.pkl")
+    ];
+    if (id) args.push("--id", id);
+    const { out, code } = await spawnPython("python/predict.py", args);
     if (code === 2)
       return res.json({ success: false, message: "model_not_found" });
     const predictions = JSON.parse(out);
@@ -144,7 +149,12 @@ app.post("/api/train", (req, res) => {
     return res.status(409).json({ error: "Training already in progress" });
   const alpha = parseFloat(req.body.alpha) || 0.01;
   const resume = req.body.resume === true;
-  const args = ["--alpha", String(alpha)];
+  const args = [
+    "--alpha", String(alpha),
+    "--dataset", path.join(DATA_DIR, "dataset.json"),
+    "--labelset", path.join(DATA_DIR, "labelset.json"),
+    "--model", path.join(DATA_DIR, "model.pkl")
+  ];
   if (resume) args.push("--resume");
   const proc = spawn(
     PYTHON_BIN,
