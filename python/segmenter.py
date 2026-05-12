@@ -11,9 +11,18 @@ import soundfile as sf
 def segment_audio(input_dir: str, output_dir: str) -> None:
     os.makedirs(output_dir, exist_ok=True)
     audio_files = glob.glob(os.path.join(input_dir, "*.wav"))
+    total = len(audio_files)
+    if total == 0:
+        print("No WAV files found.", file=sys.stderr)
+        return
     segment_id = 1
 
-    for file_path in audio_files:
+    for i, file_path in enumerate(audio_files, 1):
+        print(
+            f"[{i}/{total}] Segmenting: {os.path.basename(file_path)}",
+            file=sys.stderr,
+            flush=True,
+        )
         y, sr = librosa.load(file_path, sr=None)
         hop_length = 512
         if len(y) < sr * 1:
@@ -31,9 +40,9 @@ def segment_audio(input_dir: str, output_dir: str) -> None:
             boundary_samples = np.unique(
                 np.concatenate([[0], boundary_samples, [len(y)]])
             )
-            for i in range(len(boundary_samples) - 1):
-                start = boundary_samples[i]
-                end = boundary_samples[i + 1]
+            for j in range(len(boundary_samples) - 1):
+                start = boundary_samples[j]
+                end = boundary_samples[j + 1]
                 if end - start > 0:
                     segment_y = y[start:end]
                     out_path = os.path.join(output_dir, f"example-{segment_id:03d}.wav")
@@ -44,6 +53,8 @@ def segment_audio(input_dir: str, output_dir: str) -> None:
             out_path = os.path.join(output_dir, f"example-{segment_id:03d}.wav")
             sf.write(out_path, y, sr)
             segment_id += 1
+
+    print(f"Done: {segment_id - 1} segments written to {output_dir}", file=sys.stderr)
 
 
 if __name__ == "__main__":

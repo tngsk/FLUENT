@@ -46,15 +46,21 @@ MIN_SAMPLES = 2048  # ~93ms at 22050 Hz
 
 def create_dataset(input_dir: str, output_json: str) -> None:
     audio_files = sorted(glob.glob(os.path.join(input_dir, "*.wav")))
+    total = len(audio_files)
     feature_dict = {}
     all_features = []
     file_ids = []
-    for file_path in audio_files:
+    for i, file_path in enumerate(audio_files, 1):
         file_id = os.path.basename(file_path).split(".")[0]
         info = sf.info(file_path)
         if info.frames < MIN_SAMPLES:
-            print(f"Skip {file_id}: too short ({info.frames} samples)", file=sys.stderr)
+            print(
+                f"[{i}/{total}] Skip {file_id}: too short ({info.frames} samples)",
+                file=sys.stderr,
+                flush=True,
+            )
             continue
+        print(f"[{i}/{total}] Extracting: {file_id}", file=sys.stderr, flush=True)
         features = extract_features(file_path)
         all_features.append(features)
         file_ids.append(file_id)
