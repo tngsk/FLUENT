@@ -2,8 +2,7 @@
 
 ## このモジュールの役割
 
-Module C は FLUENT システムの唯一のユーザー接点。
-Python 側（Module A/B/D）が生成したデータを読み書きし、ラベリング作業と学習操作を担う。
+Module C は Python 側（Module A/B/D）が生成したデータを読み書きし、ラベリング作業と学習操作を担うモジュールです。
 
 ```
 [ブラウザ UI]  ←HTTP/WebSocket→  [Express server.js]  ←child_process→  [Python scripts]
@@ -61,8 +60,7 @@ npm --prefix node run dev
 - Vite dev server: `http://localhost:5173`
 - Express API server: `http://localhost:3000`
 
-Vite は `/api`・`/data`・`/socket.io` を Express へプロキシするため、
-フロントエンドからは同一オリジン扱いになる。
+Vite は `/api`・`/data`・`/socket.io` を Express へプロキシするため、フロントエンドからは同一オリジン扱いになる。
 
 ---
 
@@ -208,7 +206,7 @@ const segmentStatus = (id) => {
 
 ---
 
-## config.json とラベルのエンコード
+## config.json とラベルのシリアライズ
 
 ### config.json スキーマ
 
