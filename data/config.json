@@ -1,0 +1,6 @@
+[
+  { "id": "color", "type": "color-picker", "label": "Color" },
+  { "id": "mood", "type": "dropdown", "label": "Mood", "options": ["Happy", "Sad", "Angry"] },
+  { "id": "intensity", "type": "slider", "label": "Intensity" },
+  { "id": "instruments", "type": "checkboxes", "label": "Instruments", "options": ["Piano", "Guitar", "Bass", "Drums", "Synth"] }
+]
