@@ -96,23 +96,45 @@ const fetchConfig = async () => config.value = (await axios.get('/api/config')).
 const fetchSegments = async () => segments.value = (await axios.get('/api/segments')).data
 const fetchLabels = async () => labelset.value = (await axios.get('/api/labels')).data
 
+const decodeLabels = (flat, cfg) => {
+  let idx = 0
+  return cfg.map(field => {
+    if (field.type === 'color-picker') {
+      const dims = field.dims || 3
+      const ch = Array.from({ length: dims }, () => flat[idx++])
+      return '#' + (1 << 24 | Math.round(ch[0]*255) << 16 | Math.round(ch[1]*255) << 8 | Math.round(ch[2]*255)).toString(16).slice(1)
+    } else if (field.type === 'dropdown') {
+      return Math.round(flat[idx++] * (field.options.length - 1))
+    } else if (field.type === 'checkboxes') {
+      return Array.from({ length: field.options.length }, () => flat[idx++] >= 0.5)
+    } else {
+      return flat[idx++]
+    }
+  })
+}
+
+const encodeLabels = (uiValues, cfg) => {
+  const flat = []
+  cfg.forEach((field, i) => {
+    const val = uiValues[i]
+    if (field.type === 'color-picker') {
+      const rgb = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(val)
+      const dims = field.dims || 3
+      ;[rgb[1], rgb[2], rgb[3]].slice(0, dims).forEach(h => flat.push(parseInt(h, 16) / 255))
+    } else if (field.type === 'dropdown') {
+      flat.push(val / (field.options.length - 1))
+    } else if (field.type === 'checkboxes') {
+      val.forEach(v => flat.push(v ? 1.0 : 0.0))
+    } else {
+      flat.push(val)
+    }
+  })
+  return flat
+}
+
 const initLabels = () => {
   if (currentSegment.value && labelset.value.data[currentSegment.value]) {
-    let flatIdx = 0;
-    const labelsData = labelset.value.data[currentSegment.value];
-    currentLabels.value = config.value.map(field => {
-      if (field.type === 'color-picker') {
-        const dims = field.dims || 3;
-        const ch = Array.from({ length: dims }, () => labelsData[flatIdx++]);
-        return "#" + (1 << 24 | Math.round(ch[0]*255) << 16 | Math.round(ch[1]*255) << 8 | Math.round(ch[2]*255)).toString(16).slice(1);
-      } else if (field.type === 'dropdown') {
-        return Math.round(labelsData[flatIdx++] * (field.options.length - 1));
-      } else if (field.type === 'checkboxes') {
-        return Array.from({ length: field.options.length }, () => labelsData[flatIdx++] >= 0.5);
-      } else {
-        return labelsData[flatIdx++];
-      }
-    });
+    currentLabels.value = decodeLabels(labelset.value.data[currentSegment.value], config.value)
   } else {
     currentLabels.value = config.value.map(field => {
       if (field.type === 'color-picker') return '#000000';
@@ -135,21 +157,7 @@ const selectSegment = async (segment) => {
 const saveLabels = async () => {
   try {
     isLoading.value = true
-    let flatLabels = []
-    config.value.forEach((field, i) => {
-      let val = currentLabels.value[i]
-      if (field.type === 'color-picker') {
-        const rgb = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(val)
-        const dims = field.dims || 3;
-        [rgb[1], rgb[2], rgb[3]].slice(0, dims).forEach(h => flatLabels.push(parseInt(h, 16)/255))
-      } else if (field.type === 'dropdown') {
-        flatLabels.push(val / (field.options.length - 1))
-      } else if (field.type === 'checkboxes') {
-        val.forEach(v => flatLabels.push(v ? 1.0 : 0.0))
-      } else {
-        flatLabels.push(val)
-      }
-    })
+    const flatLabels = encodeLabels(currentLabels.value, config.value)
     await axios.post('/api/labels', { id: currentSegment.value, labels: flatLabels, cols: flatLabels.length })
     labelset.value.data[currentSegment.value] = flatLabels
   } finally {
@@ -162,20 +170,7 @@ const predict = async (silent = false) => {
     if (!silent) isLoading.value = true
     const res = await axios.post('/api/predict', { id: currentSegment.value })
     if (res.data.prediction) {
-       let flatIdx = 0
-       config.value.forEach((field, i) => {
-         if (field.type === 'color-picker') {
-           const dims = field.dims || 3;
-           const ch = Array.from({ length: dims }, () => res.data.prediction[flatIdx++]);
-           currentLabels.value[i] = "#" + (1 << 24 | Math.round(ch[0]*255) << 16 | Math.round(ch[1]*255) << 8 | Math.round(ch[2]*255)).toString(16).slice(1)
-         } else if (field.type === 'dropdown') {
-           currentLabels.value[i] = Math.round(res.data.prediction[flatIdx++] * (field.options.length - 1))
-         } else if (field.type === 'checkboxes') {
-           currentLabels.value[i] = Array.from({ length: field.options.length }, () => res.data.prediction[flatIdx++] >= 0.5)
-         } else {
-           currentLabels.value[i] = res.data.prediction[flatIdx++]
-         }
-       })
+      currentLabels.value = decodeLabels(res.data.prediction, config.value)
     }
   } catch (e) {
     if (!silent) console.error(e)

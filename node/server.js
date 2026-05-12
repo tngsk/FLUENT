@@ -104,27 +104,34 @@ app.post("/api/labels", async (req, res) => {
   }
 });
 
-app.post("/api/predict", (req, res) => {
+const spawnPython = (script, args = []) =>
+  new Promise((resolve, reject) => {
+    const proc = spawn(PYTHON_BIN, [path.join(ROOT_DIR, script), ...args], {
+      cwd: ROOT_DIR,
+    });
+    let out = "",
+      err = "";
+    proc.stdout.on("data", (d) => (out += d));
+    proc.stderr.on("data", (d) => {
+      err += d;
+      console.error(`[${script}]`, d.toString().trim());
+    });
+    proc.on("close", (code) =>
+      code === 0 ? resolve(out) : reject(new Error(err)),
+    );
+  });
+
+app.post("/api/predict", async (req, res) => {
   const { id } = req.body;
-  const proc = spawn(PYTHON_BIN, [path.join(ROOT_DIR, "python/predict.py")], {
-    cwd: ROOT_DIR,
-  });
-  let out = "",
-    err = "";
-  proc.stdout.on("data", (d) => (out += d));
-  proc.stderr.on("data", (d) => (err += d));
-  proc.on("close", (code) => {
-    if (code !== 0)
-      return res.status(500).json({ error: "Prediction failed", details: err });
-    try {
-      const predictions = JSON.parse(out);
-      predictions.data?.[id]
-        ? res.json({ success: true, prediction: predictions.data[id] })
-        : res.json({ success: false, message: "No prediction found" });
-    } catch {
-      res.status(500).json({ error: "Invalid JSON", details: err });
-    }
-  });
+  try {
+    const out = await spawnPython("python/predict.py");
+    const predictions = JSON.parse(out);
+    predictions.data?.[id]
+      ? res.json({ success: true, prediction: predictions.data[id] })
+      : res.json({ success: false, message: "No prediction found" });
+  } catch (e) {
+    res.status(500).json({ error: "Prediction failed", details: e.message });
+  }
 });
 
 let trainingProcess = null;
