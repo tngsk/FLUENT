@@ -10,7 +10,7 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 
 
-def extract_features(file_path):
+def extract_features(file_path: str) -> np.ndarray:
     y, sr = librosa.load(file_path, sr=None)
     mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
     mfcc_mean = np.mean(mfcc, axis=1)[1:]
@@ -39,7 +39,7 @@ def extract_features(file_path):
     return features
 
 
-def create_dataset(input_dir, output_json):
+def create_dataset(input_dir: str, output_json: str) -> None:
     audio_files = sorted(glob.glob(os.path.join(input_dir, "*.wav")))
     feature_dict = {}
     all_features = []

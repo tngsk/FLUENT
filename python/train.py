@@ -5,14 +5,15 @@ import pickle
 import signal
 import sys
 from datetime import datetime, timezone
+from typing import Any
 
 import numpy as np
 from sklearn.neural_network import MLPRegressor
 
-_state = {"mlp": None, "model_path": None}
+_state: dict[str, Any] = {"mlp": None, "model_path": None}
 
 
-def _handle_sigterm(sig, frame):
+def _handle_sigterm(_sig: int, _frame: object) -> None:
     mlp = _state["mlp"]
     model_path = _state["model_path"]
     if mlp is not None and model_path:
@@ -26,7 +27,13 @@ def _handle_sigterm(sig, frame):
 signal.signal(signal.SIGTERM, _handle_sigterm)
 
 
-def train_model(dataset_path, labelset_path, model_path, alpha=0.01, resume=False):
+def train_model(
+    dataset_path: str,
+    labelset_path: str,
+    model_path: str,
+    alpha: float = 0.01,
+    resume: bool = False,
+) -> None:
     _state["model_path"] = model_path
     if not os.path.exists(dataset_path):
         print(f"Error: {dataset_path} not found.", file=sys.stderr)

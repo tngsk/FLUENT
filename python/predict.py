@@ -7,7 +7,7 @@ import sys
 import numpy as np
 
 
-def predict_labels(dataset_path, model_path):
+def predict_labels(dataset_path: str, model_path: str) -> None:
     if not os.path.exists(model_path):
         print(json.dumps({"error": "model_not_found"}))
         sys.exit(2)

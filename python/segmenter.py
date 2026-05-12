@@ -8,7 +8,7 @@ import numpy as np
 import soundfile as sf
 
 
-def segment_audio(input_dir, output_dir):
+def segment_audio(input_dir: str, output_dir: str) -> None:
     os.makedirs(output_dir, exist_ok=True)
     audio_files = glob.glob(os.path.join(input_dir, "*.wav"))
     segment_id = 1
