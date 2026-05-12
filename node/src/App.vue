@@ -56,6 +56,22 @@
           </form>
         </div>
       </div>
+
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-lg font-medium text-gray-800 mb-4">Model Training</h2>
+        <div class="flex items-center gap-4 mb-4">
+          <label class="text-sm text-gray-700 whitespace-nowrap">Alpha: {{ alpha }}</label>
+          <input type="range" min="0.001" max="0.1" step="0.001" v-model.number="alpha" class="w-48">
+          <button @click="trainModel" :disabled="isTraining" class="bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700 shadow disabled:opacity-50">
+            {{ isTraining ? 'Training...' : 'Train Model' }}
+          </button>
+          <span v-if="trainStatus === 'converged'" class="text-green-600 text-sm font-medium">Converged</span>
+          <span v-else-if="trainStatus === 'error'" class="text-red-600 text-sm font-medium">Training failed</span>
+        </div>
+        <div v-if="trainLogs.length" class="font-mono text-xs bg-gray-50 rounded p-3 max-h-32 overflow-y-auto">
+          <div v-for="log in trainLogs" :key="log.epoch">epoch {{ log.epoch }}: loss = {{ log.loss.toFixed(6) }}</div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -63,8 +79,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import { io } from 'socket.io-client'
 
 const isLoading = ref(false)
+const alpha = ref(0.01)
+const isTraining = ref(false)
+const trainLogs = ref([])
+const trainStatus = ref('')
 const config = ref([])
 const segments = ref([])
 const labelset = ref({ cols: 0, data: {} })
@@ -81,8 +102,9 @@ const initLabels = () => {
     const labelsData = labelset.value.data[currentSegment.value];
     currentLabels.value = config.value.map(field => {
       if (field.type === 'color-picker') {
-        const r = labelsData[flatIdx++], g = labelsData[flatIdx++], b = labelsData[flatIdx++];
-        return "#" + (1 << 24 | Math.round(r*255) << 16 | Math.round(g*255) << 8 | Math.round(b*255)).toString(16).slice(1);
+        const dims = field.dims || 3;
+        const ch = Array.from({ length: dims }, () => labelsData[flatIdx++]);
+        return "#" + (1 << 24 | Math.round(ch[0]*255) << 16 | Math.round(ch[1]*255) << 8 | Math.round(ch[2]*255)).toString(16).slice(1);
       } else if (field.type === 'dropdown') {
         return Math.round(labelsData[flatIdx++] * (field.options.length - 1));
       } else if (field.type === 'checkboxes') {
@@ -118,7 +140,8 @@ const saveLabels = async () => {
       let val = currentLabels.value[i]
       if (field.type === 'color-picker') {
         const rgb = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(val)
-        flatLabels.push(parseInt(rgb[1], 16)/255, parseInt(rgb[2], 16)/255, parseInt(rgb[3], 16)/255)
+        const dims = field.dims || 3;
+        [rgb[1], rgb[2], rgb[3]].slice(0, dims).forEach(h => flatLabels.push(parseInt(h, 16)/255))
       } else if (field.type === 'dropdown') {
         flatLabels.push(val / (field.options.length - 1))
       } else if (field.type === 'checkboxes') {
@@ -142,8 +165,9 @@ const predict = async (silent = false) => {
        let flatIdx = 0
        config.value.forEach((field, i) => {
          if (field.type === 'color-picker') {
-           const r = res.data.prediction[flatIdx++], g = res.data.prediction[flatIdx++], b = res.data.prediction[flatIdx++]
-           currentLabels.value[i] = "#" + (1 << 24 | Math.round(r*255) << 16 | Math.round(g*255) << 8 | Math.round(b*255)).toString(16).slice(1)
+           const dims = field.dims || 3;
+           const ch = Array.from({ length: dims }, () => res.data.prediction[flatIdx++]);
+           currentLabels.value[i] = "#" + (1 << 24 | Math.round(ch[0]*255) << 16 | Math.round(ch[1]*255) << 8 | Math.round(ch[2]*255)).toString(16).slice(1)
          } else if (field.type === 'dropdown') {
            currentLabels.value[i] = Math.round(res.data.prediction[flatIdx++] * (field.options.length - 1))
          } else if (field.type === 'checkboxes') {
@@ -162,5 +186,21 @@ const predict = async (silent = false) => {
 
 onMounted(async () => {
   await fetchConfig(); await fetchSegments(); await fetchLabels()
+  const socket = io()
+  socket.on('train:progress', data => {
+    trainLogs.value.push(data)
+    if (data.status === 'converged') trainStatus.value = 'converged'
+  })
+  socket.on('train:done', ({ success }) => {
+    isTraining.value = false
+    if (!success) trainStatus.value = 'error'
+  })
 })
+
+const trainModel = async () => {
+  trainLogs.value = []
+  trainStatus.value = ''
+  isTraining.value = true
+  await axios.post('/api/train', { alpha: alpha.value })
+}
 </script>
