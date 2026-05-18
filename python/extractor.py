@@ -275,9 +275,10 @@ def create_dataset(input_dir: str, output_json: str) -> None:
         # Step 2-a: ファイルサイズチェック（短すぎるセグメントはスキップ）
         # ============================================================
         info = sf.info(file_path)
-        if info.frames < MIN_SAMPLES:
+        duration = info.frames / info.samplerate if info.samplerate else 0.0
+        if duration < MIN_DURATION_SECONDS:
             print(
-                f"[{i}/{total}] Skip {file_id}: too short ({info.frames} samples)",
+                f"[{i}/{total}] Skip {file_id}: too short ({duration:.2f}s)",
                 file=sys.stderr,
                 flush=True,
             )

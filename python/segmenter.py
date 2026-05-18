@@ -196,7 +196,9 @@ def segment_audio(
             #   → np.unique([0, 0, 1000, 2500, 5000, 6000, len(y), len(y)])
             #   → [0, 1000, 2500, 5000, 6000, len(y)]（重複なし、昇順）
             boundary_samples = np.unique(
-                np.concatenate([[0], boundary_samples, [len(y)]])
+                np.concatenate(
+                    [[0], librosa.frames_to_samples(boundaries, hop_length=hop_length), [len(y)]]
+                )
             )
 
             # ============================================================
