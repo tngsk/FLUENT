@@ -16,6 +16,9 @@ def download_audio(url, out_dir):
             'preferredcodec': 'wav',
             'preferredquality': '192',
         }],
+        'postprocessor_args': {
+            'FFmpegExtractAudio': ['-af', 'loudnorm=I=-21:TP=-9.0:LRA=7,volume=-3dB'],
+        },
         'quiet': True,
         'no_warnings': True,
         'noplaylist': True,
