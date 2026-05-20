@@ -3,6 +3,7 @@ import sys
 import os
 import json
 import glob
+import subprocess
 from pydub import AudioSegment
 
 def process_regions(input_file, title, regions, out_dir):
@@ -41,19 +42,24 @@ def process_regions(input_file, title, regions, out_dir):
 
             cropped = audio[start_ms:end_ms]
 
-            # Peak normalize to -12 dBFS
-            # pydub's max_dBFS gives the peak value.
-            # We want max_dBFS to be -12.0
-            peak_dbfs = cropped.max_dBFS
-            change_db = -12.0 - peak_dbfs
-            normalized = cropped.apply_gain(change_db)
-
             out_filename = f"{safe_title}_{next_idx:03d}.wav"
             out_filepath = os.path.join(out_dir, out_filename)
             out_filepath = os.path.abspath(out_filepath)
 
-            # Save it
-            normalized.export(out_filepath, format="wav")
+            # 一時的に保存してから ffmpeg を使用してラウドネス正規化（-12dB LUFS）を適用し、
+            # YouTubeからのダウンロード結果と音量を統一する
+            temp_segment = out_filepath + ".raw.wav"
+            cropped.export(temp_segment, format="wav")
+
+            cmd = [
+                "ffmpeg", "-y", "-i", temp_segment,
+                "-af", "loudnorm=I=-21:TP=-9.0:LRA=7,volume=-3dB",
+                "-acodec", "pcm_s16le", "-ar", "44100", "-ac", "2",
+                out_filepath
+            ]
+            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            os.remove(temp_segment)
+
             results.append({
                 "id": out_filename.replace(".wav", ""),
                 "file": out_filename

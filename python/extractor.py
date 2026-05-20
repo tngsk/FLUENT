@@ -240,6 +240,7 @@ def extract_features(file_path: str) -> np.ndarray:
 # 2048 サンプル ≈ 93ms at 22050 Hz, ≈ 46ms at 44100 Hz
 # これより短いセグメントは特徴抽出をスキップ
 MIN_SAMPLES = 2048
+MIN_DURATION_SECONDS = 0.1 # 最小継続時間（秒）
 
 
 def create_dataset(input_dir: str, output_json: str) -> None:
