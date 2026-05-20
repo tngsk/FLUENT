@@ -79,10 +79,27 @@ app.get("/api/segments", async (req, res) => {
 
 // 保存済みラベルをすべて返す。まだ1件もなければ空の A-MAP 構造を返す
 app.get("/api/labels", async (req, res) => {
+  // subjectId に基づいてフィルタリング
   const labelsetPath = path.join(DATA_DIR, "labelset.json");
   try {
+    const { subjectId } = req.query;
+    if (!subjectId) {
+      return res
+        .status(400)
+        .json({ error: "subjectId is required for GET /api/labels" });
+    }
+
     await fs.access(labelsetPath, constants.F_OK);
-    res.json(JSON.parse(await fs.readFile(labelsetPath, "utf8")));
+    const fullLabelset = JSON.parse(await fs.readFile(labelsetPath, "utf8"));
+
+    // 指定された subjectId のラベルのみをフィルタリングして返す
+    const filteredData = {};
+    for (const segmentId in fullLabelset.data) {
+      if (fullLabelset.data[segmentId][subjectId]) {
+        filteredData[segmentId] = fullLabelset.data[segmentId][subjectId];
+      }
+    }
+    res.json({ cols: fullLabelset.cols, data: filteredData });
   } catch {
     res.json({ cols: 0, data: {} });
   }
@@ -90,7 +107,7 @@ app.get("/api/labels", async (req, res) => {
 
 // ラベルを1件保存する。上書き前に data/backups/ へ自動バックアップを作成する
 app.post("/api/labels", async (req, res) => {
-  const { id, labels, cols } = req.body;
+  const { subjectId, id, labels, cols } = req.body;
   const labelsetPath = path.join(DATA_DIR, "labelset.json");
   let labelset = { cols: cols || 0, data: {} };
   try {
@@ -109,7 +126,13 @@ app.post("/api/labels", async (req, res) => {
     );
   } catch {}
   labelset.cols = cols || labelset.cols;
-  labelset.data[id] = labels;
+
+  // 入れ子構造で保存: labelset.data[segmentId][subjectId] = [labels]
+  if (!labelset.data[id]) {
+    labelset.data[id] = {};
+  }
+  labelset.data[id][subjectId] = labels;
+
   try {
     await fs.writeFile(labelsetPath, JSON.stringify(labelset, null, 2));
     res.json({ success: true });
@@ -174,7 +197,9 @@ app.post("/api/youtube", async (req, res) => {
 
     res.json({ success: true });
   } catch (e) {
-    res.status(500).json({ error: "Download or extraction failed", details: e.message });
+    res
+      .status(500)
+      .json({ error: "Download or extraction failed", details: e.message });
   }
 });
 
@@ -264,7 +289,15 @@ app.post("/api/train", (req, res) => {
 
   proc.on("close", (code) => {
     trainingProcess = null;
-    send({ status: "done", success: code === 0 });
+    if (code !== 0) {
+      send({
+        status: "done",
+        success: false,
+        error: `Training process exited with code ${code}. Check server logs for details.`,
+      });
+    } else {
+      send({ status: "done", success: true });
+    }
     res.end();
   });
 });
@@ -360,7 +393,7 @@ app.post("/api/tools/process", async (req, res) => {
       console.log("Audio processed successfully. Running feature extractor...");
       spawnPython("python/extractor.py")
         .then(() => console.log("Feature extractor completed."))
-        .catch(err => console.error("Feature extractor failed:", err));
+        .catch((err) => console.error("Feature extractor failed:", err));
     }
 
     res.json(parsedOut);

@@ -132,7 +132,6 @@ def _handle_sigterm(_sig: int, _frame: object) -> None:
 # SIGTERM シグナルをハンドラに登録
 signal.signal(signal.SIGTERM, _handle_sigterm)
 
-
 def train_model(
     dataset_path: str,
     labelset_path: str,
@@ -161,12 +160,28 @@ def train_model(
     # Step 2: ファイルの存在確認
     # ============================================================
     if not os.path.exists(dataset_path):
-        print(f"Error: {dataset_path} not found.", file=sys.stderr)
+        print(
+            json.dumps(
+                {
+                    "status": "done",
+                    "success": False,
+                    "error": f"Error: {dataset_path} not found. Run extractor.py first.",
+                }
+            ),
+            flush=True,
+        )
         sys.exit(1)
 
     if not os.path.exists(labelset_path):
         print(
-            f"Error: {labelset_path} not found. Start labeling first.", file=sys.stderr
+            json.dumps(
+                {
+                    "status": "done",
+                    "success": False,
+                    "error": f"Error: {labelset_path} not found. Start labeling first.",
+                }
+            ),
+            flush=True,
         )
         sys.exit(1)
 
@@ -186,27 +201,87 @@ def train_model(
     # ============================================================
     # Step 4: データの対応付け（交差セット）
     # ============================================================
-    # labelset に存在するセグメント ID のみ訓練対象
-    # （未ラベル ID は除外）
     x_arr = []  # 特徴量（26次元）のリスト
     y_arr = []  # ラベル（10次元）のリスト
+    actually_trained_ids = [] # 実際に訓練に使用されたセグメントID
 
-    labeled_ids = list(labelset["data"].keys())
+    expected_x_cols = dataset.get("cols", 26)
+    expected_y_cols = labelset.get("cols", 10)
 
-    for file_id in labeled_ids:
-        # labelset に ID があり、かつ dataset にも ID がある場合のみ
-        if file_id in dataset["data"]:
-            x_arr.append(dataset["data"][file_id])
-            y_arr.append(labelset["data"][file_id])
+    for file_id, subject_labels in labelset["data"].items():
+        if file_id not in dataset["data"]:
+            continue # 特徴量がないセグメントはスキップ
+
+        x = dataset["data"][file_id]
+
+        # x の妥当性チェック
+        if not isinstance(x, list) or len(x) != expected_x_cols:
+            print(f"Warning: Skipping {file_id} due to invalid feature dimensions or type.", file=sys.stderr)
+            continue
+
+        # subject_labels は辞書（被験者ごとのラベル）またはリスト（旧形式）
+        if isinstance(subject_labels, dict):
+            if not subject_labels: # 空の辞書はスキップ
+                continue
+            
+            # 各被験者のラベルを個別のサンプルとして追加
+            for sid, y in subject_labels.items():
+                # y の妥当性チェック
+                try:
+                    if not isinstance(y, list) or len(y) != expected_y_cols:
+                        print(f"Warning: Skipping {file_id} for subject {sid} due to invalid label dimensions or type.", file=sys.stderr)
+                        continue
+                    
+                    x_float = np.array(x, dtype=float)
+                    y_float = np.array(y, dtype=float)
+                    
+                    if not np.isfinite(x_float).all() or not np.isfinite(y_float).all():
+                        print(f"Warning: Skipping {file_id} for subject {sid} due to non-finite values.", file=sys.stderr)
+                        continue
+                        
+                    x_arr.append(x_float)
+                    y_arr.append(y_float)
+                    if file_id not in actually_trained_ids: # 訓練に使用されたIDを記録
+                        actually_trained_ids.append(file_id)
+                except (TypeError, ValueError) as e:
+                    print(f"Warning: Skipping {file_id} for subject {sid} due to data conversion error: {e}", file=sys.stderr)
+                    continue
+        elif isinstance(subject_labels, list):
+            # 旧形式のラベル（リスト）の場合
+            try:
+                y = subject_labels
+                if len(y) != expected_y_cols:
+                    print(f"Warning: Skipping {file_id} (old format) due to invalid label dimensions.", file=sys.stderr)
+                    continue
+                
+                x_float = np.array(x, dtype=float)
+                y_float = np.array(y, dtype=float)
+                
+                if not np.isfinite(x_float).all() or not np.isfinite(y_float).all():
+                    print(f"Warning: Skipping {file_id} (old format) due to non-finite values.", file=sys.stderr)
+                    continue
+
+                x_arr.append(x_float)
+                y_arr.append(y_float)
+                if file_id not in actually_trained_ids:
+                    actually_trained_ids.append(file_id)
+            except (TypeError, ValueError) as e:
+                print(f"Warning: Skipping {file_id} (old format) due to data conversion error: {e}", file=sys.stderr)
+                continue
 
     # ============================================================
     # Step 5: 訓練データの検証
     # ============================================================
-    # 交差セットが空の場合（labelset に ID があるが dataset に ID がない場合など）
-    # → 訓練不可能なため終了
     if len(x_arr) == 0:
         print(
-            "Error: No intersecting data between dataset and labelset.", file=sys.stderr
+            json.dumps(
+                {
+                    "status": "done",
+                    "success": False,
+                    "error": "Error: No valid training data found. Make sure you have labeled segments and run extractor.py.",
+                }
+            ),
+            flush=True,
         )
         sys.exit(1)
 
@@ -219,29 +294,57 @@ def train_model(
     # y_arr: (N, 10) の 2 次元配列
     #   N = ラベル付きセグメント数
     #   10 = 感性ラベル次元数
-    x_arr = np.array(x_arr)
-    y_arr = np.array(y_arr)
+    # ここでは既に np.array(..., dtype=float) で追加されているため、再変換は不要
+    # ただし、念のため最終的な型チェック
+    x_arr = np.array(x_arr, dtype=float)
+    y_arr = np.array(y_arr, dtype=float)
+
+    # 数値的な妥当性の最終チェック (NaN or Inf)
+    if not np.isfinite(x_arr).all() or not np.isfinite(y_arr).all():
+        print(
+            json.dumps(
+                {"status": "done", "success": False, "error": "Dataset contains non-finite values (NaN/Inf) after processing. Please check your data."}
+            ),
+            flush=True,
+        )
+        sys.exit(1)
 
     # ============================================================
     # Step 7: モデルの初期化または復元
     # ============================================================
+    mlp = None
     if resume and os.path.exists(model_path):
         # ============================================================
         # Step 7-a: 既存モデルから続きから訓練（resume フロー）
         # ============================================================
-        # pickle で保存された既存 MLP をロード
-        with open(model_path, "rb") as f:
-            mlp = pickle.load(f)
+        try:
+            with open(model_path, "rb") as f:
+                mlp = pickle.load(f)
+            # alpha（正則化強度）を指定値に変更
+            # warm_start=True で増分訓練を有効化
+            # max_iter=1 で毎回の fit() を 1 epoch として使用
+            mlp.set_params(alpha=alpha, warm_start=True, max_iter=1, solver="adam")
+            print(json.dumps({"status": "resumed"}), flush=True)
+        except Exception as e:
+            print(
+                json.dumps(
+                    {
+                        "status": "done",
+                        "success": False,
+                        "error": f"Failed to resume model: {str(e)}. Training from scratch.",
+                    }
+                ),
+                flush=True,
+            )
+            resume = False # 続きから再開を諦め、新規作成へ
 
-        # alpha（正則化強度）を指定値に変更
-        # warm_start=True で増分訓練を有効化
-        # max_iter=1 で毎回の fit() を 1 epoch として使用
-        mlp.set_params(alpha=alpha, warm_start=True, max_iter=1)
-        print(json.dumps({"status": "resumed"}), flush=True)
-    else:
+    if mlp is None: # resume が失敗したか、最初から新規作成の場合
         # ============================================================
         # Step 7-b: 新規モデルの作成（ゼロから訓練）
         # ============================================================
+        # 小規模データセット（サンプル数 < 20）の場合、lbfgs の方が数値的に安定し、かつ収束が速い
+        solver = "lbfgs" if len(x_arr) < 20 else "adam"
+
         # MLPRegressor パラメータ：
         #
         # hidden_layer_sizes=(32, 16)
@@ -253,8 +356,8 @@ def train_model(
         #   ReLU（Rectified Linear Unit）活性化
         #   f(x) = max(0, x)：単純かつ効果的
         #
-        # solver="adam"
-        #   Adam オプティマイザ：適応的学習率、勾配下降より安定
+        # solver=solver
+        #   サンプル数が少なければ lbfgs, 多ければ adam を使用
         #
         # alpha=alpha
         #   L2 正則化強度（デフォルト 0.01）
@@ -269,13 +372,13 @@ def train_model(
         # random_state=42
         #   乱数シード固定（再現性確保）
         #
-        # early_stopping=False
+        # early_stopping: False
         #   scikit-learn 組み込みの early stopping は使用しない
         #   FLUENT は独自の収束判定ロジック（loss 改善度）を使用
         mlp = MLPRegressor(
             hidden_layer_sizes=(32, 16),
             activation="relu",
-            solver="adam",
+            solver=solver,
             alpha=alpha,
             max_iter=1000,
             random_state=42,
@@ -325,6 +428,15 @@ def train_model(
 
     try:
         mlp.fit(x_arr, y_arr)
+    except Exception as e:
+        sys.stdout = old_stdout # エラー発生時は stdout を元に戻す
+        print(
+            json.dumps(
+                {"status": "done", "success": False, "error": f"Training failed: {str(e)}"}
+            ),
+            flush=True,
+        )
+        sys.exit(1)
     finally:
         sys.stdout = old_stdout
 
@@ -358,7 +470,7 @@ def train_model(
     # - "trained_ids": 訓練に使用したセグメント ID のリスト
     meta = {
         "trained_at": datetime.now(timezone.utc).isoformat(),
-        "trained_ids": labeled_ids,
+        "trained_ids": actually_trained_ids, # 実際に訓練に使用されたIDを記録
     }
     meta_path = os.path.join(os.path.dirname(model_path), "train_meta.json")
     with open(meta_path, "w") as f:
