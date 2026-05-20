@@ -224,29 +224,13 @@
         font-weight: 500;
       }
 
+
       /* YouTube Download */
-      .yt-controls {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-      .yt-row {
-        display: flex;
-        gap: 0.5rem;
-        align-items: center;
-      }
-      .yt-row input[type="text"],
-      .yt-row input[type="number"] {
-        padding: 0.375rem 0.5rem;
-        border: 1px solid #d1d5db;
-        border-radius: 0.375rem;
-      }
-      .yt-row input[type="text"] {
-        flex: 1;
-      }
-      .yt-row input[type="number"] {
-        width: 5rem;
-      }
+      .yt-controls { display: flex; flex-direction: column; gap: 0.5rem; }
+      .yt-row { display: flex; gap: 0.5rem; align-items: center; }
+      .yt-row input[type="text"], .yt-row input[type="number"] { padding: 0.375rem 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; }
+      .yt-row input[type="text"] { flex: 1; }
+      .yt-row input[type="number"] { width: 5rem; }
 
       /* Training */
       .train-controls {
@@ -368,41 +352,13 @@
         </h2>
         <div class="yt-controls">
           <div class="yt-row">
-            <input
-              type="text"
-              id="yt-url"
-              placeholder="https://www.youtube.com/watch?v=..."
-            />
+            <input type="text" id="yt-url" placeholder="https://www.youtube.com/watch?v=...">
           </div>
           <div class="yt-row">
-            <label
-              >Start (s): <input type="number" id="yt-start" min="0"
-            /></label>
-            <label
-              >Duration (s): <input type="number" id="yt-duration" min="1"
-            /></label>
-            <button
-              class="btn btn-indigo"
-              id="yt-btn"
-              onclick="downloadYouTube()"
-            >
-              Download & Add
-            </button>
-            <span style="margin-left: 1rem; font-size: 0.875rem; display: none">
-              Vol:
-              <input
-                type="number"
-                id="yt-volume"
-                value="-12"
-                style="width: 3rem; padding: 2px"
-              />
-              dB
-            </span>
-            <span
-              id="yt-status"
-              class="status"
-              style="margin-left: auto"
-            ></span>
+            <label>Start (s): <input type="number" id="yt-start" min="0"></label>
+            <label>Duration (s): <input type="number" id="yt-duration" min="1"></label>
+            <button class="btn btn-indigo" id="yt-btn" onclick="downloadYouTube()">Download & Add</button>
+            <span id="yt-status" class="status" style="margin-left:auto;"></span>
           </div>
         </div>
       </div>
@@ -777,10 +733,11 @@
         document.getElementById("save-btn").disabled = false;
         document.getElementById("suggest-btn").disabled = false;
         renderSegments();
-        if (labelset.data && labelset.data[id]) {
+        if (labelset.data[id]) {
           setFormValues(decodeLabels(labelset.data[id]));
         } else {
           setFormValues(defaultValues());
+          await predict(true);
         }
       }
 
@@ -789,12 +746,10 @@
         try {
           const flat = encodeLabels(getFormValues());
           await api("POST", "/api/labels", {
-            subjectId: subjectId,
             id: currentSegment,
             labels: flat,
             cols: flat.length,
           });
-
           labelset.data[currentSegment] = flat;
           renderSegments();
         } finally {
@@ -869,10 +824,7 @@
                 trainedIds = meta.trained_ids || [];
                 renderSegments();
               } else {
-                setTrainStatus(
-                  "Failed: " + (data.error || "Unknown Error"),
-                  "err",
-                );
+                setTrainStatus("Failed", "err");
               }
             } else if (data.status === "converged") {
               setTrainStatus("Converged", "ok");
@@ -893,41 +845,38 @@
       }
 
       async function downloadYouTube() {
-        const url = document.getElementById("yt-url").value;
-        const start = document.getElementById("yt-start").value;
-        const duration = document.getElementById("yt-duration").value;
-        const volumeDb =
-          parseFloat(document.getElementById("yt-volume").value) || -12;
+        const url = document.getElementById('yt-url').value;
+        const start = document.getElementById('yt-start').value;
+        const duration = document.getElementById('yt-duration').value;
 
         if (!url) {
           alert("Please enter a URL");
           return;
         }
 
-        const btn = document.getElementById("yt-btn");
-        const status = document.getElementById("yt-status");
+        const btn = document.getElementById('yt-btn');
+        const status = document.getElementById('yt-status');
         btn.disabled = true;
-        status.textContent = "Downloading and extracting features...";
-        status.className = "status status-warn";
+        status.textContent = 'Downloading and extracting features...';
+        status.className = 'status status-warn';
 
         try {
           const payload = { url };
           if (start !== "") payload.start = parseInt(start);
           if (duration !== "") payload.duration = parseInt(duration);
-          payload.volumeDb = volumeDb;
 
-          await api("POST", "/api/youtube", payload);
+          await api('POST', '/api/youtube', payload);
 
-          status.textContent = "Success!";
-          status.className = "status status-ok";
-          document.getElementById("yt-url").value = "";
+          status.textContent = 'Success!';
+          status.className = 'status status-ok';
+          document.getElementById('yt-url').value = '';
 
           // Refresh segment list
-          segments = await api("GET", "/api/segments");
+          segments = await api('GET', '/api/segments');
           renderSegments();
         } catch (e) {
-          status.textContent = "Failed: " + e.message;
-          status.className = "status status-err";
+          status.textContent = 'Failed: ' + e.message;
+          status.className = 'status status-err';
         } finally {
           btn.disabled = false;
         }
@@ -952,7 +901,7 @@
         const [cfg, segs, lbls, meta] = await Promise.all([
           api("GET", "/api/config"),
           api("GET", "/api/segments"),
-          api("GET", "/api/labels?subjectId=" + subjectId),
+          api("GET", "/api/labels"),
           api("GET", "/api/train/meta"),
         ]);
         config = cfg;
@@ -962,6 +911,8 @@
         renderSegments();
         buildForm();
       }
+
+      init();
     </script>
   </body>
 </html>
