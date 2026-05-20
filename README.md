@@ -37,7 +37,9 @@ FLUENT/
   スタンドアロンのYouTubeダウンロードおよびセグメンテーションツール（`/api/tools/*` および `public/downloader.html`）。
   - **`downloader_tool.py`**: `yt-dlp` を使用しYouTube等から音声を `data/tmp/` にダウンロード。
   - **`vad_tool.py`**: `librosa` を用いて音声区間(VAD)を検出し、無音部分を除外した領域を特定します。
-  - **`processor_tool.py`**: `pydub` を用いて指定領域をクロップし、-12dBのピーク正規化を適用後、`data/segments/` に `VideoTitle_NNN.wav` の形式で保存します。
+  - **`processor_tool.py`**: `pydub` を用いて指定領域をクロップし、ラウドネス正規化（loudnorm）を適用後、`data/segments/` に `VideoTitle_NNN.wav` の形式で保存します。
+  - **`youtube_dl.py`**: YouTube等のURLから直接指定範囲（開始時間・長さ）をダウンロードし、ラウドネス正規化を適用して `data/segments/` に保存します（`/api/youtube` エンドポイントが利用）。
+  - **`normalize_existing_audio.py`**: `data/segments/` に存在するすべてのWAVファイルに対して一括でラウドネス正規化（loudnorm）を適用し、音量を統一するユーティリティスクリプト。
 
 ## プロセスごとのデータ形式
 
