@@ -29,9 +29,9 @@ FLUENT/
   `data/segments/` のWAVファイルから26次元の物理特徴量（MFCC, Spectral, Theory, Chroma等）を抽出します。抽出された特徴量は `StandardScaler` で一括して標準化され、`data/dataset.json` と `data/scaler.pkl` に保存されます。
 - **Module C (node/server.js, node/public/)**
   - **Main UI (`public/index.html`)**: `wavesurfer.js` を用いたオーディオ再生機能と、`data/config.json` に基づき動的生成されるラベル入力フォーム（color, dropdown, slider, checkboxes 等）を提供します。AIサジェスト機能も統合されています。
-  - **API Server (`server.js`)**: `fs/promises` による非同期I/Oと、child_process (`spawn`) によるPythonスクリプトの呼び出しを行います。進行状況のSSEストリーミングや、`labelset.json` の自動バックアップ機能も持ちます。
+  - **API Server (`server.js`)**: `fs/promises` による非同期I/Oと、child_process (`spawn`) によるPythonスクリプトの呼び出しを行います。進行状況のSSEストリーミングや、`labelset.json` の自動バックアップ機能も持ちます。また、学習の中断（`POST /api/train/stop`）やモデルの削除・リセット（`DELETE /api/model`）、ツールによる音声追加後の自動的な特徴量抽出（`extractor.py`の呼び出し）もサポートします。
 - **Module D (python/train.py, python/predict.py)**
-  - **Trainer**: MLPRegressor等を用い、`dataset.json` (X) と `labelset.json` (Y) からモデルを学習します。学習済みモデルは `model.pkl` に、学習履歴は `train_meta.json` に保存されます。Epoch毎のLossや収束状態をJSON形式で標準出力し、NodeサーバーのSSEに渡します。
+  - **Trainer**: MLPRegressor等を用い、`dataset.json` (X) と `labelset.json` (Y) からモデルを学習します。学習済みモデルは `model.pkl` に、学習履歴は `train_meta.json` に保存されます。Epoch毎のLossや収束状態をJSON形式で標準出力し、NodeサーバーのSSEに渡します。学習途中での安全な中断（SIGTERMによる途中保存）や、既存モデルからの学習再開（resume）にも対応しています。
   - **Predictor**: 指定IDまたは全セグメントの推論を行い、結果を常に [0.0, 1.0] の範囲に正規化して出力します。
 - **Tools (Downloader, VAD, Processor)**
   スタンドアロンのYouTubeダウンロードおよびセグメンテーションツール（`/api/tools/*` および `public/downloader.html`）。
