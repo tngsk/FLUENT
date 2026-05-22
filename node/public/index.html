@@ -286,13 +286,14 @@
     >
       <div class="card" style="width: 24rem; text-align: center">
         <h2 style="margin-bottom: 1.5rem">FLUENT Label Manager</h2>
-        <p class="subtitle" style="margin-bottom: 1.5rem">
+        <label class="subtitle" for="subject-input" style="display: block; margin-bottom: 1.5rem">
           被験者 ID を入力してください
-        </p>
+        </label>
         <input
           type="text"
           id="subject-input"
           placeholder="例: 1"
+          onkeydown="if(event.key === 'Enter') login()"
           style="
             width: 100%;
             padding: 0.75rem;
@@ -352,7 +353,7 @@
         </h2>
         <div class="yt-controls">
           <div class="yt-row">
-            <input type="text" id="yt-url" placeholder="https://www.youtube.com/watch?v=...">
+            <input type="text" id="yt-url" placeholder="https://www.youtube.com/watch?v=..." aria-label="YouTube URL">
           </div>
           <div class="yt-row">
             <label>Start (s): <input type="number" id="yt-start" min="0"></label>
