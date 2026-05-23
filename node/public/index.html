@@ -32,6 +32,14 @@
         font-size: 1.5rem;
         font-weight: 700;
       }
+      #subject-input {
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+      }
+      #subject-input:focus-visible {
+        outline: none;
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 1px #3b82f6;
+      }
       .subtitle {
         color: #6b7280;
         margin-top: 0.25rem;
@@ -66,9 +74,14 @@
         background: #f9fafb;
         cursor: pointer;
         font-size: 0.875rem;
+        transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
       }
       .seg-btn:hover {
         background: #e5e7eb;
+      }
+      .seg-btn:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px white, 0 0 0 4px #3b82f6;
       }
       .seg-btn.active {
         background: #3b82f6;
@@ -141,6 +154,11 @@
         border: none;
         border-radius: 0.25rem;
         cursor: pointer;
+        transition: box-shadow 0.15s ease-in-out;
+      }
+      input[type="color"]:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px white, 0 0 0 4px #3b82f6;
       }
       select {
         width: 100%;
@@ -149,6 +167,12 @@
         border-radius: 0.375rem;
         background: white;
         font-size: 0.875rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+      }
+      select:focus-visible {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 1px #3b82f6;
       }
       .slider-row {
         display: flex;
@@ -157,6 +181,11 @@
       }
       input[type="range"] {
         flex: 1;
+      }
+      input[type="range"]:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px white, 0 0 0 4px #3b82f6;
+        border-radius: 0.25rem;
       }
       .slider-val {
         font-size: 0.875rem;
@@ -174,6 +203,11 @@
       .checkbox-row input {
         width: 1rem;
         height: 1rem;
+      }
+      .checkbox-row input:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px white, 0 0 0 4px #3b82f6;
+        border-radius: 0.125rem;
       }
       .actions {
         display: flex;
@@ -193,6 +227,11 @@
         cursor: pointer;
         font-size: 0.875rem;
         font-weight: 500;
+        transition: background-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+      }
+      .btn:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px white, 0 0 0 4px #3b82f6;
       }
       .btn:disabled {
         opacity: 0.5;
@@ -202,21 +241,36 @@
         background: #16a34a;
         color: white;
       }
+      .btn-green:not(:disabled):hover {
+        background: #15803d;
+      }
       .btn-indigo {
         background: #4f46e5;
         color: white;
+      }
+      .btn-indigo:not(:disabled):hover {
+        background: #4338ca;
       }
       .btn-gray {
         background: #6b7280;
         color: white;
       }
+      .btn-gray:not(:disabled):hover {
+        background: #4b5563;
+      }
       .btn-purple {
         background: #9333ea;
         color: white;
       }
+      .btn-purple:not(:disabled):hover {
+        background: #7e22ce;
+      }
       .btn-red {
         background: #dc2626;
         color: white;
+      }
+      .btn-red:not(:disabled):hover {
+        background: #b91c1c;
       }
       .loading-msg {
         font-size: 0.875rem;
@@ -228,7 +282,8 @@
       /* YouTube Download */
       .yt-controls { display: flex; flex-direction: column; gap: 0.5rem; }
       .yt-row { display: flex; gap: 0.5rem; align-items: center; }
-      .yt-row input[type="text"], .yt-row input[type="number"] { padding: 0.375rem 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; }
+      .yt-row input[type="text"], .yt-row input[type="number"] { padding: 0.375rem 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; }
+      .yt-row input[type="text"]:focus-visible, .yt-row input[type="number"]:focus-visible { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
       .yt-row input[type="text"] { flex: 1; }
       .yt-row input[type="number"] { width: 5rem; }
 
@@ -355,8 +410,8 @@
             <input type="text" id="yt-url" placeholder="https://www.youtube.com/watch?v=...">
           </div>
           <div class="yt-row">
-            <label>Start (s): <input type="number" id="yt-start" min="0"></label>
-            <label>Duration (s): <input type="number" id="yt-duration" min="1"></label>
+            <label for="yt-start">Start (s):</label> <input type="number" id="yt-start" min="0">
+            <label for="yt-duration">Duration (s):</label> <input type="number" id="yt-duration" min="1">
             <button class="btn btn-indigo" id="yt-btn" onclick="downloadYouTube()">Download & Add</button>
             <span id="yt-status" class="status" style="margin-left:auto;"></span>
           </div>
@@ -596,6 +651,7 @@
           wrap.className = "field";
           const lbl = document.createElement("label");
           lbl.className = "field-label";
+          lbl.htmlFor = `inp-${i}`;
           lbl.textContent = field.label;
           wrap.appendChild(lbl);
 
@@ -636,11 +692,18 @@
           } else if (field.type === "checkboxes") {
             const grp = document.createElement("div");
             grp.id = `inp-${i}`;
-            field.options.forEach((opt) => {
+            grp.role = "group";
+            grp.setAttribute("aria-labelledby", `lbl-${i}`);
+            lbl.id = `lbl-${i}`;
+            lbl.removeAttribute("for"); // Remove for attribute as it's a group
+
+            field.options.forEach((opt, optIdx) => {
               const row = document.createElement("label");
               row.className = "checkbox-row";
+              row.htmlFor = `inp-${i}-${optIdx}`;
               const cb = document.createElement("input");
               cb.type = "checkbox";
+              cb.id = `inp-${i}-${optIdx}`;
               row.appendChild(cb);
               row.appendChild(document.createTextNode(opt));
               grp.appendChild(row);
