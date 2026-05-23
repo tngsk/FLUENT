@@ -464,7 +464,7 @@
       let config = [],
         segments = [],
         labelset = { cols: 0, data: {} },
-        trainedIds = [],
+        trainedIds = new Set(),
         currentSegment = null,
         subjectId = null;
 
@@ -558,7 +558,7 @@
       // ─── Segment status ───────────────────────────────────────────────────────────
       function segmentStatus(id) {
         if (!labelset.data || !labelset.data[id]) return "unlabeled";
-        if (trainedIds.includes(id)) return "trained";
+        if (trainedIds.has(id)) return "trained";
         return "pending";
       }
 
@@ -567,22 +567,30 @@
         const list = document.getElementById("segment-list");
         const wasHidden = list.hidden;
         list.innerHTML = "";
+
+        let pendingCount = 0;
+        // ⚡ Bolt: Use DocumentFragment to batch DOM inserts and avoid multiple reflows
+        const fragment = document.createDocumentFragment();
+
+        // ⚡ Bolt: Single loop for both DOM building and pending counting
         segments.forEach((id) => {
           const btn = document.createElement("button");
           btn.className = "seg-btn" + (id === currentSegment ? " active" : "");
           btn.onclick = () => selectSegment(id);
           const dot = document.createElement("span");
-          dot.className = `dot dot-${segmentStatus(id)}`;
+          const status = segmentStatus(id);
+          if (status === "pending") pendingCount++;
+          dot.className = `dot dot-${status}`;
           btn.appendChild(dot);
           btn.appendChild(document.createTextNode(id));
-          list.appendChild(btn);
+          fragment.appendChild(btn);
         });
-        const n = segments.filter(
-          (id) => segmentStatus(id) === "pending",
-        ).length;
+
+        list.appendChild(fragment);
+
         const msg = document.getElementById("pending-msg");
-        msg.textContent = `${n} pending — retrain recommended`;
-        msg.hidden = n === 0;
+        msg.textContent = `${pendingCount} pending — retrain recommended`;
+        msg.hidden = pendingCount === 0;
         list.hidden = wasHidden;
         list.style.display = wasHidden ? "none" : "flex";
       }
@@ -821,7 +829,7 @@
               if (data.success) {
                 setTrainStatus("Done", "ok");
                 const meta = await api("GET", "/api/train/meta");
-                trainedIds = meta.trained_ids || [];
+                trainedIds = new Set(meta.trained_ids || []);
                 renderSegments();
               } else {
                 setTrainStatus("Failed", "err");
@@ -907,7 +915,7 @@
         config = cfg;
         segments = segs;
         labelset = lbls;
-        trainedIds = meta.trained_ids || [];
+        trainedIds = new Set(meta.trained_ids || []);
         renderSegments();
         buildForm();
       }
