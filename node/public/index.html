@@ -286,9 +286,9 @@
     >
       <div class="card" style="width: 24rem; text-align: center">
         <h2 style="margin-bottom: 1.5rem">FLUENT Label Manager</h2>
-        <p class="subtitle" style="margin-bottom: 1.5rem">
+        <label for="subject-input" class="subtitle" style="display: block; margin-bottom: 1.5rem">
           被験者 ID を入力してください
-        </p>
+        </label>
         <input
           type="text"
           id="subject-input"
@@ -596,6 +596,7 @@
           wrap.className = "field";
           const lbl = document.createElement("label");
           lbl.className = "field-label";
+          lbl.htmlFor = `inp-${i}`;
           lbl.textContent = field.label;
           wrap.appendChild(lbl);
 
