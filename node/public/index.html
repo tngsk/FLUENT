@@ -464,7 +464,7 @@
       let config = [],
         segments = [],
         labelset = { cols: 0, data: {} },
-        trainedIds = [],
+        trainedIds = new Set(),
         currentSegment = null,
         subjectId = null;
 
@@ -558,7 +558,7 @@
       // ─── Segment status ───────────────────────────────────────────────────────────
       function segmentStatus(id) {
         if (!labelset.data || !labelset.data[id]) return "unlabeled";
-        if (trainedIds.includes(id)) return "trained";
+        if (trainedIds.has(id)) return "trained";
         return "pending";
       }
 
@@ -567,6 +567,7 @@
         const list = document.getElementById("segment-list");
         const wasHidden = list.hidden;
         list.innerHTML = "";
+        const fragment = new DocumentFragment();
         segments.forEach((id) => {
           const btn = document.createElement("button");
           btn.className = "seg-btn" + (id === currentSegment ? " active" : "");
@@ -575,8 +576,9 @@
           dot.className = `dot dot-${segmentStatus(id)}`;
           btn.appendChild(dot);
           btn.appendChild(document.createTextNode(id));
-          list.appendChild(btn);
+          fragment.appendChild(btn);
         });
+        list.appendChild(fragment);
         const n = segments.filter(
           (id) => segmentStatus(id) === "pending",
         ).length;
@@ -821,7 +823,7 @@
               if (data.success) {
                 setTrainStatus("Done", "ok");
                 const meta = await api("GET", "/api/train/meta");
-                trainedIds = meta.trained_ids || [];
+                trainedIds = new Set(meta.trained_ids || []);
                 renderSegments();
               } else {
                 setTrainStatus("Failed", "err");
@@ -907,7 +909,7 @@
         config = cfg;
         segments = segs;
         labelset = lbls;
-        trainedIds = meta.trained_ids || [];
+        trainedIds = new Set(meta.trained_ids || []);
         renderSegments();
         buildForm();
       }
