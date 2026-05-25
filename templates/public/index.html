@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Template Frontend</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        button { padding: 10px 15px; margin-top: 10px; cursor: pointer; }
+        .log { background: #f0f0f0; padding: 10px; margin-top: 20px; white-space: pre-wrap; height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Template UI</h1>
+
+        <div id="status">Loading...</div>
+
+        <div>
+            <h2>Controls</h2>
+            <button onclick="fetchLabels()">Get Labels</button>
+            <button onclick="saveLabels()">Save Dummy Label</button>
+            <button onclick="runPredict()">Run Predict</button>
+        </div>
+
+        <div class="log" id="log-output"></div>
+    </div>
+
+    <script>
+        function log(message) {
+            const el = document.getElementById('log-output');
+            el.textContent += (typeof message === 'object' ? JSON.stringify(message, null, 2) : message) + '\n';
+            el.scrollTop = el.scrollHeight;
+        }
+
+        async function api(method, url, body = null) {
+            const options = { method, headers: {} };
+            if (body) {
+                options.headers['Content-Type'] = 'application/json';
+                options.body = JSON.stringify(body);
+            }
+            const res = await fetch(url, options);
+            if (!res.ok) throw new Error(`API Error: ${res.status}`);
+            return res.json();
+        }
+
+        async function fetchLabels() {
+            try {
+                const data = await api('GET', '/api/labels');
+                log("--- Fetched Labels ---");
+                log(data);
+            } catch (e) {
+                log(`Error: ${e.message}`);
+            }
+        }
+
+        async function saveLabels() {
+            try {
+                const dummyData = {
+                    cols: 1,
+                    data: {
+                        "seg1": { "user1": [Math.random().toFixed(2)] }
+                    }
+                };
+                const res = await api('POST', '/api/labels', dummyData);
+                log("--- Saved Labels ---");
+                log(res);
+            } catch (e) {
+                log(`Error: ${e.message}`);
+            }
+        }
+
+        async function runPredict() {
+            try {
+                log("Running prediction...");
+                const res = await api('POST', '/api/predict', { id: "seg1" });
+                log("--- Prediction Result ---");
+                log(res);
+            } catch (e) {
+                log(`Error: ${e.message}`);
+            }
+        }
+
+        // Init
+        document.getElementById('status').textContent = 'Ready';
+        log("System initialized.");
+    </script>
+</body>
+</html>
