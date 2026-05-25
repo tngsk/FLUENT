@@ -271,6 +271,14 @@
         overflow-y: auto;
         border: 1px solid #e5e7eb;
       }
+
+      /* Accessibility */
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible {
+        outline: 2px solid #2563eb;
+        outline-offset: 2px;
+      }
     </style>
   </head>
   <body>
@@ -293,6 +301,7 @@
           type="text"
           id="subject-input"
           placeholder="例: 1"
+          aria-label="Subject ID"
           style="
             width: 100%;
             padding: 0.75rem;
@@ -352,7 +361,7 @@
         </h2>
         <div class="yt-controls">
           <div class="yt-row">
-            <input type="text" id="yt-url" placeholder="https://www.youtube.com/watch?v=...">
+            <input type="text" id="yt-url" aria-label="YouTube URL" placeholder="https://www.youtube.com/watch?v=...">
           </div>
           <div class="yt-row">
             <label>Start (s): <input type="number" id="yt-start" min="0"></label>
@@ -596,6 +605,7 @@
           wrap.className = "field";
           const lbl = document.createElement("label");
           lbl.className = "field-label";
+          lbl.htmlFor = `inp-${i}`;
           lbl.textContent = field.label;
           wrap.appendChild(lbl);
 
