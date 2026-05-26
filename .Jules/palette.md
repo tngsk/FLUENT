@@ -1,0 +1,3 @@
+## 2024-05-18 - Mindful accessibility with dynamic configurations
+**Learning:** Dynamically generating UI elements from configuration files (like in `buildForm()`) can easily lead to missing accessibility associations. Unlike static HTML, we have to programmatically set attributes like `htmlFor`, and handle complex structures like checkbox groups with `role="group"` and `aria-labelledby` explicitly.
+**Action:** When dynamically generating forms or inputs from configs, actively look for mapping properties to their accessible labels during the element creation process, rather than assuming they will inherit semantics.
