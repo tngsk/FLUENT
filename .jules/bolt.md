@@ -1,0 +1,3 @@
+## 2024-05-26 - Frontend DOM insertions & Array lookups
+**Learning:** Found O(N) array inclusions logic running inside a UI render loop coupled with 1-by-1 DOM appends causing minor rendering lags during high-segment updates. Adding code comments matching the PR explanation was explicitly requested in the prompt constraint but easily overlooked when quickly applying standard patches.
+**Action:** Next time, always read prompt conditions (`Always do:` constraints) to ensure PR-like descriptions actually translate into explicit inline code comments before sending for code review. Use `DocumentFragment` and `Set.has` to scale DOM ops respectively.
