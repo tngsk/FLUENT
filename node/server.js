@@ -176,16 +176,21 @@ app.post("/api/youtube", async (req, res) => {
   if (!url) return res.status(400).json({ error: "URL is required" });
 
   try {
-    const dlArgs = ["--url", url, "--output", path.join(DATA_DIR, "segments")];
-    if (start !== undefined) {
-      dlArgs.push("--start", String(start));
+    if (start === undefined && duration === undefined) {
+      // 自動分割（Librosa解析）を行う main.py を呼び出す
+      await spawnPython("main.py", ["--url", url]);
+    } else {
+      // 指定範囲のみの個別ダウンロード（従来の動作）
+      const dlArgs = [
+        "--url",
+        url,
+        "--output",
+        path.join(DATA_DIR, "segments"),
+      ];
+      if (start !== undefined) dlArgs.push("--start", String(start));
+      if (duration !== undefined) dlArgs.push("--duration", String(duration));
+      await spawnPython("python/youtube_dl.py", dlArgs);
     }
-    if (duration !== undefined) {
-      dlArgs.push("--duration", String(duration));
-    }
-
-    // 1. YouTube等からダウンロードして segments/ に保存
-    await spawnPython("python/youtube_dl.py", dlArgs);
 
     // 2. 特徴量抽出を実行して dataset.json と scaler.pkl を更新
     await spawnPython("python/extractor.py", [

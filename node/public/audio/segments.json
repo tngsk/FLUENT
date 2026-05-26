@@ -1,0 +1,42 @@
+[
+  {
+    "id": "example-001",
+    "title": "1_Intro: Analyzed 1_Intro",
+    "file": "example-001.wav"
+  },
+  {
+    "id": "example-002",
+    "title": "1_A-Melody: Analyzed 1_A-Melody",
+    "file": "example-002.wav"
+  },
+  {
+    "id": "example-003",
+    "title": "1_B-Melody: Analyzed 1_B-Melody",
+    "file": "example-003.wav"
+  },
+  {
+    "id": "example-004",
+    "title": "1_Chorus: Analyzed 1_Chorus",
+    "file": "example-004.wav"
+  },
+  {
+    "id": "example-005",
+    "title": "1_Intro: Analyzed 1_Intro",
+    "file": "example-005.wav"
+  },
+  {
+    "id": "example-006",
+    "title": "1_A-Melody: Analyzed 1_A-Melody",
+    "file": "example-006.wav"
+  },
+  {
+    "id": "example-007",
+    "title": "1_B-Melody: Analyzed 1_B-Melody",
+    "file": "example-007.wav"
+  },
+  {
+    "id": "example-008",
+    "title": "1_Chorus: Analyzed 1_Chorus",
+    "file": "example-008.wav"
+  }
+]
