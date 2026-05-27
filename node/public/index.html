@@ -597,6 +597,12 @@
           const lbl = document.createElement("label");
           lbl.className = "field-label";
           lbl.textContent = field.label;
+
+          if (field.type === "checkboxes") {
+            lbl.id = `lbl-${i}`;
+          } else {
+            lbl.htmlFor = `inp-${i}`;
+          }
           wrap.appendChild(lbl);
 
           if (field.type === "color-picker") {
@@ -636,6 +642,8 @@
           } else if (field.type === "checkboxes") {
             const grp = document.createElement("div");
             grp.id = `inp-${i}`;
+            grp.setAttribute("role", "group");
+            grp.setAttribute("aria-labelledby", `lbl-${i}`);
             field.options.forEach((opt) => {
               const row = document.createElement("label");
               row.className = "checkbox-row";
