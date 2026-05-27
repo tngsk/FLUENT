@@ -224,6 +224,8 @@ __marimo__/
 
 .DS_Store
 
-# Audio files
+# Zed editor
+.zed/
 
+# Audio files
 *.wav
