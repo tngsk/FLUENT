@@ -6,6 +6,7 @@
 
 ```text
 FLUENT/
+├── main.py    # YouTubeからの自動ダウンロード、楽曲構造検出、調・コード進行分析の統合スクリプト
 ├── python/    # バックエンド処理（セグメンタ・特徴量抽出・機械学習モデルの学習と推論、独立したダウンローダーツール群）
 ├── node/      # フロントエンドUI・APIサーバー（Vanilla JS/HTML + Express、UI/ラベルマネージャー、ツールAPI）
 ├── data/      # 共有データ（入出力WAV、JSONデータセット、モデル、スケーラー、設定ファイル）
@@ -20,7 +21,7 @@ FLUENT/
 - **Module B (Extractor)**: 物理特徴量の抽出・標準化
 - **Module C (Label Manager & API)**: WebベースのラベリングUIおよびExpress APIサーバー。さらにダウンローダー専用UI(`public/downloader.html`)も含む
 - **Module D (Trainer/Predictor)**: MLPによる機械学習・推論
-- **Tools (Audio Downloader Tool)**: YouTubeからのダウンロード、VAD(音声区間検出)、クロッピング・正規化を行う独立したツール群
+- **Tools (Audio Downloader Tool & Music Analyzer)**: YouTubeからのダウンロード、楽曲構造や調・コードの自動解析（`main.py`）、VAD(音声区間検出)、クロッピング・正規化を行う独立したツール群
 
 ## 各モジュールの詳細な機能
 
@@ -36,6 +37,7 @@ FLUENT/
   - **Predictor**: 指定IDまたは全セグメントの推論を行い、結果を常に [0.0, 1.0] の範囲に正規化して出力します。
 - **Tools (Downloader, VAD, Processor)**
   スタンドアロンのYouTubeダウンロードおよびセグメンテーションツール（`/api/tools/*` および `public/downloader.html`）。
+  - **`main.py`**: YouTube等のURLから音声をダウンロードし、Librosa等を用いて楽曲構造（イントロ、Aメロ、サビなど）や調・コード進行を自動解析。指定範囲または解析されたセグメントに分割し、`dataset.json` や `segments.json` にメタデータとともに保存します。
   - **`downloader_tool.py`**: `yt-dlp` を使用しYouTube等から音声を `data/tmp/` にダウンロード。
   - **`vad_tool.py`**: `librosa` を用いて音声区間(VAD)を検出し、無音部分を除外した領域を特定します。
   - **`processor_tool.py`**: `pydub` を用いて指定領域をクロップし、ラウドネス正規化（loudnorm）を適用後、`data/segments/` に `VideoTitle_NNN.wav` の形式で保存します。
@@ -46,9 +48,10 @@ FLUENT/
 
 各プロセス間のデータは、FluCoMa 互換の A-MAP JSONフォーマット、またはWAVファイルでやり取りされます。
 
-- **元音源・セグメント (WAV)**:
+- **元音源・セグメント (WAV) およびメタデータ**:
   - `data/raw_audio/` → 分割 → `data/segments/example-NNN.wav`
   - ツールの場合は `data/tmp/` → 処理 → `data/segments/VideoTitle_NNN.wav`
+  - `main.py` などのツールが出力する楽曲のセグメント情報、調、コード進行などのメタデータは `data/segments/segments.json` に保存されます。
 - **特徴量 X (`data/dataset.json`)**:
   - 形式: `{"cols": 26, "data": {"example-001": [0.12, -0.45, ...]}}`
   - Extractorが出力し、Trainer/Predictorが読み込みます。すべての値は標準化(Standardization)されています。
