@@ -107,6 +107,7 @@ def segment_audio(
         # y: 音声の波形データ（1次元配列。例: 44100Hz × 30秒 = 1,323,000サンプル）
         # sr: サンプリングレート（Hz。通常 44100 または 48000）
         y, sr = librosa.load(file_path, sr=None)
+        duration_total = len(y) / sr
 
         # MFCC 計算用の "フレーム跳び幅"
         # hop_length が小さいほど時間分解能が上がるが計算量が増える
@@ -171,7 +172,7 @@ def segment_audio(
             #
             # 例）MFCC フレーム数が 2586、k=15 の場合
             #   → boundaries = [0, 1, 2, ..., 2, 1, 0, ...]（クラスタ割り当て）
-            boundaries = librosa.segment.agglomerative(mfcc, k)
+            boundaries = librosa.segment.agglomerative(smoothed_features, k)
 
             # ============================================================
             # Step 7: フレーム番号 → サンプル番号に変換
