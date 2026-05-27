@@ -4,17 +4,11 @@ import json
 import os
 import subprocess
 
-try:
-    import librosa
-    import numpy as np
-    from scipy.ndimage import median_filter
-    from scipy.sparse import lil_matrix  # 疎行列作成のためにインポート
-    from sklearn.cluster import (
-        AgglomerativeClustering,  # AgglomerativeClustering をインポート
-    )
-except ImportError:
-    print("librosa または numpy がインストールされていません。")
-    print("pip install librosa numpy を実行してください。")
+import librosa
+import numpy as np
+from scipy.ndimage import median_filter
+from scipy.sparse import lil_matrix
+from sklearn.cluster import AgglomerativeClustering
 
 
 def estimate_key_and_chords(y, sr):
@@ -348,7 +342,7 @@ def download_specific_sections(url, segments, key_info, chord_info):
 
     with open(dataset_path, "w", encoding="utf-8") as f:
         json.dump(dataset, f, ensure_ascii=False, indent=2)
-    print(f"[STEP 4] dataset.json に調とコードを記録しました。")
+    print("[STEP 4] dataset.json に調とコードを記録しました。")
 
 
 def main():
