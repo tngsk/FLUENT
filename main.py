@@ -24,8 +24,32 @@ def estimate_key_and_chords(y, sr):
     key_idx = np.argmax(chroma_avg)
     estimated_key = keys[key_idx]
 
-    # --- コード進行の推定（簡易版） ---
-    # 楽曲を8つの区間に分けて、それぞれの区間で最も強い音をルートとする
+    # --- コード進行の推定（テンプレートマッチング版） ---
+    # 12のメジャーコードと12のマイナーコードのテンプレートを作成
+    templates = []
+    template_labels = []
+    for i in range(12):
+        # Major: root(0), major third(4), perfect fifth(7)
+        t_maj = np.zeros(12)
+        t_maj[i] = 1.0
+        t_maj[(i + 4) % 12] = 1.0
+        t_maj[(i + 7) % 12] = 1.0
+        t_maj = t_maj / np.linalg.norm(t_maj)  # 正規化
+        templates.append(t_maj)
+        template_labels.append(keys[i])
+
+        # Minor: root(0), minor third(3), perfect fifth(7)
+        t_min = np.zeros(12)
+        t_min[i] = 1.0
+        t_min[(i + 3) % 12] = 1.0
+        t_min[(i + 7) % 12] = 1.0
+        t_min = t_min / np.linalg.norm(t_min)  # 正規化
+        templates.append(t_min)
+        template_labels.append(keys[i] + "m")
+
+    templates = np.array(templates)
+
+    # 楽曲を8つの区間に分ける
     n_segments = 8
     hop_size = chroma.shape[1] // n_segments
     progression = []
@@ -33,12 +57,16 @@ def estimate_key_and_chords(y, sr):
         chunk = chroma[:, i * hop_size : (i + 1) * hop_size]
         if chunk.shape[1] == 0:
             continue
-        root_idx = np.argmax(np.mean(chunk, axis=1))
-        # 簡易的にメジャー/マイナーを判定（第3音の強さで比較）
-        third_major = (root_idx + 4) % 12
-        third_minor = (root_idx + 3) % 12
-        is_minor = np.mean(chunk[third_minor]) > np.mean(chunk[third_major])
-        chord = keys[root_idx] + ("m" if is_minor else "")
+
+        chroma_vector = np.mean(chunk, axis=1)
+        norm = np.linalg.norm(chroma_vector)
+        if norm > 0:
+            chroma_vector = chroma_vector / norm
+
+        # テンプレートとのコサイン類似度（内積）を計算
+        scores = np.dot(templates, chroma_vector)
+        best_match_idx = np.argmax(scores)
+        chord = template_labels[best_match_idx]
         progression.append(chord)
 
     chord_str = " -> ".join(progression)
