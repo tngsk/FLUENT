@@ -28,7 +28,7 @@ FLUENT/
 - **Module A (python/segmenter.py)**
   `data/raw_audio/` にあるWAVファイルを指定した秒数（デフォルト2秒）で分割し、`data/segments/` に `example-NNN.wav` の形式で出力します。
 - **Module B (python/extractor.py)**
-  `data/segments/` のWAVファイルから26次元の物理特徴量（MFCC, Spectral, Theory, Chroma等）を抽出します。抽出された特徴量は `StandardScaler` で一括して標準化され、`data/dataset.json` と `data/scaler.pkl` に保存されます。
+  `data/segments/` のWAVファイルから26次元の物理特徴量（MFCC, Spectral, Theory, Chroma等）を抽出します。抽出された特徴量は `StandardScaler` で一括して標準化され、`data/dataset.json` と `data/scaler.pkl` に保存されます。また、0.1秒未満の短すぎるセグメントは自動的にスキップされます。
 - **Module C (node/server.js, node/public/)**
   - **Main UI (`public/index.html`)**: `wavesurfer.js` を用いたオーディオ再生機能と、`data/config.json` に基づき動的生成されるラベル入力フォーム（color, dropdown, slider, checkboxes 等）を提供します。AIサジェスト機能も統合されています。
   - **API Server (`server.js`)**: `fs/promises` による非同期I/Oと、child_process (`spawn`) によるPythonスクリプトの呼び出しを行います。進行状況のSSEストリーミングや、`labelset.json` の自動バックアップ機能も持ちます。また、学習の中断（`POST /api/train/stop`）やモデルの削除・リセット（`DELETE /api/model`）、ツールによる音声追加後の自動的な特徴量抽出（`extractor.py`の呼び出し）、特定被験者（subjectId）ごとのラベルフィルタリング取得もサポートします。
@@ -51,9 +51,9 @@ FLUENT/
 - **元音源・セグメント (WAV) およびメタデータ**:
   - `data/raw_audio/` → 分割 → `data/segments/example-NNN.wav`
   - ツールの場合は `data/tmp/` → 処理 → `data/segments/VideoTitle_NNN.wav`
-  - `main.py` などのツールが出力する楽曲のセグメント情報、調、コード進行などのメタデータは `data/segments/segments.json` に保存されます。
+  - `main.py` などのツールが出力する楽曲のセグメント情報、調、コード進行などのメタデータは `data/segments/segments.json` に保存されます。また、調とコード進行情報は `dataset.json` の各セグメントの `global_key` および `global_chords` にも記録されます。
 - **特徴量 X (`data/dataset.json`)**:
-  - 形式: `{"cols": 26, "data": {"example-001": [0.12, -0.45, ...]}}`
+  - 形式: `{"cols": 26, "data": {"example-001": [0.12, -0.45, ...]}}` （抽出された特徴量に加えて、解析された `global_key` および `global_chords` が追加されることがあります）
   - Extractorが出力し、Trainer/Predictorが読み込みます。すべての値は標準化(Standardization)されています。
 - **主観ラベル Y (`data/labelset.json`)**:
   - 形式: `{"cols": 10, "data": {"example-001": {"subjectId": [0.2, 0.6, 1.0, ...]}}}`
