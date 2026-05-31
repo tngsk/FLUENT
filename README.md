@@ -8,10 +8,12 @@
 FLUENT/
 ├── main.py    # YouTubeからの自動ダウンロード、楽曲構造検出、調・コード進行分析の統合スクリプト
 ├── python/    # バックエンド処理（セグメンタ・特徴量抽出・機械学習モデルの学習と推論、独立したダウンローダーツール群）
+│   └── tests/ # `pytest`を利用し、`numpy`・`tmp_path`等でダミー音源を動的生成してテストを実行
 ├── node/      # フロントエンドUI・APIサーバー（Vanilla JS/HTML + Express、UI/ラベルマネージャー、ツールAPI）
 ├── data/      # 共有データ（入出力WAV、JSONデータセット、モデル、スケーラー、設定ファイル）
 ├── templates/ # 教育目的・独自カスタマイズ用に独立動作可能な各コアロジックのテンプレート
 ```
+※Pythonの依存関係は `uv` によって `.venv` 仮想環境内で厳格に管理されます。
 
 ## モジュール構成
 
@@ -28,13 +30,16 @@ FLUENT/
 - **Module A (python/segmenter.py)**
   `data/raw_audio/` にあるWAVファイルを指定した秒数（デフォルト2秒）で分割し、`data/segments/` に `example-NNN.wav` の形式で出力します。
 - **Module B (python/extractor.py)**
-  `data/segments/` のWAVファイルから26次元の物理特徴量（MFCC, Spectral, Theory, Chroma等）を抽出します。抽出された特徴量は `StandardScaler` で一括して標準化され、`data/dataset.json` と `data/scaler.pkl` に保存されます。また、0.1秒未満の短すぎるセグメントは自動的にスキップされます。
+  `data/segments/` のWAVファイルから26次元の物理特徴量（MFCC[12次元・第0係数除外], Spectral[4次元], Theory[3次元], Chroma[7次元]）を抽出します。抽出された特徴量は `StandardScaler` で一括して標準化（平均0、標準偏差1）され、新規推論時にも再利用できるよう `data/scaler.pkl` にパラメータが保存されます。また、0.1秒未満の短すぎるセグメントは自動的にスキップされます。
 - **Module C (node/server.js, node/public/)**
   - **Main UI (`public/index.html`)**: `wavesurfer.js` を用いたオーディオ再生機能と、`data/config.json` に基づき動的生成されるラベル入力フォーム（color, dropdown, slider, checkboxes 等）を提供します。AIサジェスト機能も統合されています。
-  - **API Server (`server.js`)**: `fs/promises` による非同期I/Oと、child_process (`spawn`) によるPythonスクリプトの呼び出しを行います。進行状況のSSEストリーミングや、`labelset.json` の自動バックアップ機能も持ちます。また、学習の中断（`POST /api/train/stop`）やモデルの削除・リセット（`DELETE /api/model`）、ツールによる音声追加後の自動的な特徴量抽出（`extractor.py`の呼び出し）、特定被験者（subjectId）ごとのラベルフィルタリング取得もサポートします。
+  - **API Server (`server.js`)**: イベントループをブロックしないよう、完全に `fs/promises` による非同期I/Oを採用しています。また、`ALLOWED_ORIGINS`（デフォルト: `http://localhost:5173`）を利用したCORS制御を備えています。
+    - エンドポイントの特徴として、学習の中断（`POST /api/train/stop` / SIGTERMによる安全な途中保存）やモデルの削除・リセット（`DELETE /api/model`）をサポート。
+    - `POST /api/labels` でラベルが更新されるたびに、上書き事故を防ぐため `data/backups/` フォルダへタイムスタンプ付きで `labelset.json` の自動バックアップを作成します。
 - **Module D (python/train.py, python/predict.py)**
-  - **Trainer**: MLPRegressor等を用い、`dataset.json` (X) と `labelset.json` (Y) からモデルを学習します。学習済みモデルは `model.pkl` に、学習履歴は `train_meta.json` に保存されます。Epoch毎のLossや収束状態をJSON形式で標準出力し、NodeサーバーのSSEに渡します。学習途中での安全な中断（SIGTERMによる途中保存）や、既存モデルからの学習再開（resume）にも対応しています。
-  - **Predictor**: 指定IDまたは全セグメントの推論を行い、結果を常に [0.0, 1.0] の範囲に正規化して出力します。
+  - Pythonの各バックエンド処理は、`argparse`を用いてファイルパスの引数指定に対応しており、Node.js側からの堅牢な実行・パースを保証するため、結果となるJSONデータは `stdout` へ出力し、ログやエラーは全て `sys.stderr` へリダイレクトする設計となっています。
+  - **Trainer**: MLPRegressor等を用い、`dataset.json` (X) と `labelset.json` (Y) からモデルを学習します。学習済みモデルは `model.pkl` に、学習履歴は `train_meta.json` に保存されます。Epoch毎のLossや収束状態をJSON形式で標準出力し、NodeサーバーのSSEストリーミングに渡します。学習途中での安全な中断（SIGTERMによる途中保存）や、既存モデルからの学習再開（resume）にも対応しています。
+  - **Predictor**: 指定IDまたは全セグメントの推論を行い、結果を常に [0.0, 1.0] の範囲に正規化して出力します。特に `--id` 引数を渡すことで、特定セグメント単体での効率的な推論が可能です。
 - **Tools (Downloader, VAD, Processor)**
   スタンドアロンのYouTubeダウンロードおよびセグメンテーションツール（`/api/tools/*` および `public/downloader.html`）。
   - **`main.py`**: YouTube等のURLから音声をダウンロードし、Librosa等を用いて楽曲構造（イントロ、Aメロ、サビなど）や調・コード進行を自動解析。指定範囲または解析されたセグメントに分割し、`dataset.json` や `segments.json` にメタデータとともに保存します。
