@@ -105,9 +105,40 @@ app.get("/api/labels", async (req, res) => {
   }
 });
 
+// アンケートの保存
+app.post("/api/survey", async (req, res) => {
+  const { subjectId, ...surveyData } = req.body;
+  if (!subjectId)
+    return res.status(400).json({ error: "subjectId is required" });
+
+  const surveyPath = path.join(DATA_DIR, `survey_${subjectId}.json`);
+  try {
+    await fs.writeFile(surveyPath, JSON.stringify(surveyData, null, 2));
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to save survey" });
+  }
+});
+
+// アンケートの取得
+app.get("/api/survey", async (req, res) => {
+  const { subjectId } = req.query;
+  if (!subjectId)
+    return res.status(400).json({ error: "subjectId is required" });
+
+  const surveyPath = path.join(DATA_DIR, `survey_${subjectId}.json`);
+  try {
+    const data = await fs.readFile(surveyPath, "utf8");
+    res.json(JSON.parse(data));
+  } catch {
+    // ファイルがない場合は空のオブジェクトを返す（エラーにはしない）
+    res.json({});
+  }
+});
+
 // ラベルを1件保存する。上書き前に data/backups/ へ自動バックアップを作成する
 app.post("/api/labels", async (req, res) => {
-  const { subjectId, id, labels, cols } = req.body;
+  const { subjectId, id, labels, cols, survey } = req.body;
   const labelsetPath = path.join(DATA_DIR, "labelset.json");
   let labelset = { cols: cols || 0, data: {} };
   try {
@@ -131,7 +162,11 @@ app.post("/api/labels", async (req, res) => {
   if (!labelset.data[id]) {
     labelset.data[id] = {};
   }
-  labelset.data[id][subjectId] = labels;
+
+  // 分析しやすいよう、ラベル配列とアンケート回答をセットで保存
+  // 注意: python/train.py がこの構造に対応している必要があります。
+  // 配列のみを期待している場合は labels のみを代入してください。
+  labelset.data[id][subjectId] = { labels, survey };
 
   try {
     await fs.writeFile(labelsetPath, JSON.stringify(labelset, null, 2));

@@ -287,6 +287,84 @@
         overflow-y: auto;
         border: 1px solid #e5e7eb;
       }
+
+      /* Survey Styles */
+      .survey-header {
+        position: sticky;
+        top: 0;
+        background: white;
+        padding: 1rem;
+        border-bottom: 2px solid #3b82f6;
+        z-index: 100;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+      .progress-container {
+        width: 100%;
+        background: #e5e7eb;
+        border-radius: 9999px;
+        height: 0.75rem;
+        margin-bottom: 0.5rem;
+      }
+      .progress-fill {
+        background: #3b82f6;
+        height: 100%;
+        border-radius: 9999px;
+        transition: width 0.3s ease;
+        width: 0%;
+      }
+      .survey-section {
+        margin-bottom: 2.5rem;
+      }
+      .survey-section h2 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+        color: #111827;
+        border-left: 4px solid #3b82f6;
+        padding-left: 0.75rem;
+      }
+      .question-item {
+        background: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 0.75rem;
+        border: 1px solid #e5e7eb;
+      }
+      .question-text {
+        font-size: 0.95rem;
+        margin-bottom: 1rem;
+        font-weight: 500;
+      }
+      .likert-scale {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        max-width: 500px;
+        margin: 0 auto;
+      }
+      .likert-option {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1;
+      }
+      .likert-option input[type="radio"] {
+        width: 1.25rem;
+        height: 1.25rem;
+        cursor: pointer;
+      }
+      .likert-label {
+        font-size: 0.7rem;
+        color: #6b7280;
+        text-align: center;
+      }
+      .input-text {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+      }
     </style>
   </head>
   <body>
@@ -329,6 +407,158 @@
       </div>
     </div>
 
+    <!-- アンケート画面 -->
+    <div id="survey-screen" class="container" hidden>
+      <div class="survey-header">
+        <div class="progress-container">
+          <div id="survey-progress-bar" class="progress-fill"></div>
+        </div>
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+          "
+        >
+          <span style="font-weight: bold; color: #3b82f6">回答の進捗状況</span>
+          <span id="survey-progress-text">0% 完了</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h1 style="margin-bottom: 1.5rem; text-align: center">
+          事前アンケート
+        </h1>
+        <p class="subtitle" style="margin-bottom: 2rem; text-align: center">
+          システム利用の前に、いくつかの質問にお答えください。
+        </p>
+
+        <form id="survey-form" onchange="updateSurveyProgress()">
+          <!-- BFI-2 -->
+          <div class="survey-section" id="section-bfi">
+            <h2>○ BFI-2</h2>
+            <p class="subtitle" style="margin-bottom: 1rem">
+              各項目がどの程度あなた自身に当てはまるか選択してください。
+            </p>
+          </div>
+
+          <!-- 基本属性 -->
+          <div class="survey-section">
+            <h2>○ 基本属性</h2>
+            <div class="question-item">
+              <div class="question-text">1. 年齢</div>
+              <input
+                type="number"
+                name="attr_age"
+                class="input-text"
+                placeholder="例: 22"
+                required
+                oninput="updateSurveyProgress()"
+              />
+            </div>
+            <div class="question-item">
+              <div class="question-text">2. 性別</div>
+              <div class="likert-scale">
+                <label class="likert-option"
+                  ><input
+                    type="radio"
+                    name="attr_gender"
+                    value="male"
+                    required
+                  /><span>男性</span></label
+                >
+                <label class="likert-option"
+                  ><input type="radio" name="attr_gender" value="female" /><span
+                    >女性</span
+                  ></label
+                >
+                <label class="likert-option"
+                  ><input type="radio" name="attr_gender" value="other" /><span
+                    >その他</span
+                  ></label
+                >
+              </div>
+            </div>
+            <div class="question-item">
+              <div class="question-text">3. 音楽を聴く頻度</div>
+              <div class="likert-scale">
+                <label class="likert-option"
+                  ><span class="likert-label">全く聴かない</span
+                  ><input
+                    type="radio"
+                    name="attr_freq"
+                    value="1"
+                    required
+                  /><span>1</span></label
+                >
+                <label class="likert-option"
+                  ><input type="radio" name="attr_freq" value="2" /><span
+                    >2</span
+                  ></label
+                >
+                <label class="likert-option"
+                  ><input type="radio" name="attr_freq" value="3" /><span
+                    >3</span
+                  ></label
+                >
+                <label class="likert-option"
+                  ><input type="radio" name="attr_freq" value="4" /><span
+                    >4</span
+                  ></label
+                >
+                <label class="likert-option"
+                  ><span class="likert-label">常に聴いている</span
+                  ><input type="radio" name="attr_freq" value="5" /><span
+                    >5</span
+                  ></label
+                >
+              </div>
+            </div>
+            <div class="question-item">
+              <div class="question-text">4. どんな時に音楽を聴いているか</div>
+              <input
+                type="text"
+                name="attr_context"
+                class="input-text"
+                placeholder="例: 通学中、リラックスしたい時など"
+                required
+                oninput="updateSurveyProgress()"
+              />
+            </div>
+          </div>
+
+          <!-- 音楽ジャンル -->
+          <div class="survey-section" id="section-genre">
+            <h2>○ 音楽ジャンル</h2>
+            <p class="subtitle" style="margin-bottom: 1rem">
+              各ジャンルの好き嫌いについてお答えください（1:嫌い 〜 5:好き）。
+            </p>
+          </div>
+
+          <!-- 音楽特徴量 -->
+          <div class="survey-section" id="section-features">
+            <h2>○ 音楽特徴量の嗜好</h2>
+          </div>
+
+          <!-- 歌詞・想像力・機能・経験 (小カテゴリ) -->
+          <div class="survey-section" id="section-others"></div>
+
+          <div style="text-align: center; padding: 2rem 0">
+            <button
+              type="button"
+              id="survey-finish-btn"
+              class="btn btn-indigo"
+              style="padding: 1rem 3rem; font-size: 1.125rem"
+              disabled
+              onclick="finishSurvey()"
+            >
+              アンケートを完了してラベリングへ
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- メインコンテンツ -->
     <div class="container" id="main-app" hidden>
       <header>
@@ -361,6 +591,31 @@
         </div>
         <p class="subtitle">Audio to Sensitivity Mapping</p>
       </header>
+
+      <!-- 被験者属性の表示パネル（データ分析・確認用） -->
+      <div
+        id="subject-info-banner"
+        class="card"
+        style="
+          padding: 1rem;
+          background: #f0fdf4;
+          border: 1px solid #bbf7d0;
+          display: none;
+          margin-bottom: 1rem;
+        "
+      >
+        <div
+          style="display: flex; gap: 2rem; font-size: 0.875rem; flex-wrap: wrap"
+        >
+          <div><strong>被験者属性:</strong></div>
+          <div>年齢: <span id="info-age">-</span></div>
+          <div>性別: <span id="info-gender">-</span></div>
+          <div>音楽聴取頻度: <span id="info-freq">-</span> / 5</div>
+          <div style="flex-basis: 100%; margin-top: 0.25rem; color: #6b7280">
+            聴取状況: <span id="info-context">-</span>
+          </div>
+        </div>
+      </div>
 
       <div class="card">
         <h2 style="font-size: 1rem; font-weight: 500; margin-bottom: 1rem">
@@ -500,7 +755,8 @@
         labelset = { cols: 0, data: {} },
         trainedIds = [],
         currentSegment = null,
-        subjectId = null;
+        subjectId = null,
+        surveyData = null;
 
       // ─── API helper ──────────────────────────────────────────────────────────────
       const api = (method, url, body) =>
@@ -517,14 +773,206 @@
           return r.json().catch(() => null); // JSONパース失敗時も null を返す
         });
 
+      const SURVEY_CONFIG = {
+        bfi: [
+          "無口な方だ。",
+          "思いやりがあり、優しい。",
+          "行き当たりばったりな方だ。",
+          "多くの悩みごとを抱えている。",
+          "芸術、音楽、文学に魅了されている。",
+          "上に立つ方で、リーダーとして活動する。",
+          "他人を見下すことがある。",
+          "なかなか作業に取り掛かることができない。",
+          "憂うつになり、落胆する方だ。",
+          "抽象的な知識にはほとんど関心がない。",
+          "活力にあふれている。",
+          "人々のいちばん良いところを思い浮かべる。",
+          "ちゃんとして、いつも周りから当てにされる。",
+          "情緒が安定しおり、簡単には取り乱さない。",
+          "個性的で、新しいアイデアを思いつく。",
+        ],
+        genre: [
+          "ロック",
+          "ポップス",
+          "クラッシック",
+          "ジャズ",
+          "ヒップホップ",
+          "EDM",
+          "アニメ・ゲーム音楽",
+          "映画音楽・サントラ",
+          "K-POP",
+          "ボーカロイド",
+          "オルタナティブ・インディー",
+        ],
+        features: [
+          "テンポが速い音楽が好き",
+          "静かで落ち着いた音楽が好き",
+          "メロディがはっきりしている音楽が好き",
+          "リズムが複雑な音楽が好き",
+          "インストゥルメンタル（歌なし）が好き",
+          "明るい曲が好き",
+          "切ない・暗い曲が好き",
+          "テンションの高い曲が好き",
+          "ゆったりした曲が好き",
+        ],
+        lyrics: [
+          "曲を聴くとき、歌詞の内容をよく注意して聴く",
+          "歌詞の良し悪しは、その曲を好きになるかどうかに影響する",
+        ],
+        imagination: [
+          "音楽を聴くと、頭の中で映像が浮かぶことが多い",
+          "音楽を聴くと、その曲に合った“色”のイメージが思い浮かぶ",
+        ],
+        function: [
+          "気分を変えたい時に、意識的に音楽を選んで聴く",
+          "集中したい時に、決まって聴く音楽がある",
+        ],
+        experience: [
+          "家族に音楽経験者（楽器・歌・作曲など）はいますか",
+          "幼少期、家庭で音楽が流れていることが多かった",
+          "幼少期、家族と一緒に音楽を聴いたり歌ったりする機会が多かった",
+        ],
+      };
+
+      function buildSurvey() {
+        const createLikert = (
+          name,
+          text,
+          low = "当てはまらない",
+          high = "当てはまる",
+        ) => `
+          <div class="question-item">
+            <div class="question-text">${text}</div>
+            <div class="likert-scale">
+              <label class="likert-option"><span class="likert-label">${low}</span><input type="radio" name="${name}" value="1" required><span>1</span></label>
+              <label class="likert-option"><input type="radio" name="${name}" value="2"><span>2</span></label>
+              <label class="likert-option"><input type="radio" name="${name}" value="3"><span>3</span></label>
+              <label class="likert-option"><input type="radio" name="${name}" value="4"><span>4</span></label>
+              <label class="likert-option"><span class="likert-label">${high}</span><input type="radio" name="${name}" value="5"><span>5</span></label>
+            </div>
+          </div>`;
+
+        const bfiCont = document.getElementById("section-bfi");
+        if (bfiCont.children.length <= 2) {
+          SURVEY_CONFIG.bfi.forEach(
+            (q, i) =>
+              (bfiCont.innerHTML += createLikert(`bfi_${i}`, `${i + 1}. ${q}`)),
+          );
+          const genCont = document.getElementById("section-genre");
+          SURVEY_CONFIG.genre.forEach(
+            (q, i) =>
+              (genCont.innerHTML += createLikert(
+                `genre_${i}`,
+                `${i + 1}. ${q}`,
+                "嫌い",
+                "好き",
+              )),
+          );
+          const featCont = document.getElementById("section-features");
+          SURVEY_CONFIG.features.forEach(
+            (q, i) =>
+              (featCont.innerHTML += createLikert(
+                `feat_${i}`,
+                `${i + 1}. ${q}`,
+              )),
+          );
+          const otherCont = document.getElementById("section-others");
+          otherCont.innerHTML +=
+            "<h3>○ 歌詞重視</h3>" +
+            SURVEY_CONFIG.lyrics
+              .map((q, i) => createLikert(`lyrics_${i}`, `${i + 1}. ${q}`))
+              .join("");
+          otherCont.innerHTML +=
+            '<h3 style="margin-top:1.5rem">○ 想像力</h3>' +
+            SURVEY_CONFIG.imagination
+              .map((q, i) => createLikert(`imag_${i}`, `${i + 1}. ${q}`))
+              .join("");
+          otherCont.innerHTML +=
+            '<h3 style="margin-top:1.5rem">○ 音楽の機能的利用</h3>' +
+            SURVEY_CONFIG.function
+              .map((q, i) => createLikert(`func_${i}`, `${i + 1}. ${q}`))
+              .join("");
+          otherCont.innerHTML +=
+            '<h3 style="margin-top:1.5rem">○ 音楽経験</h3>' +
+            SURVEY_CONFIG.experience
+              .map((q, i) => createLikert(`exp_${i}`, `${i + 1}. ${q}`))
+              .join("");
+        }
+      }
+
+      function updateSurveyProgress() {
+        const form = document.getElementById("survey-form");
+        const formData = new FormData(form);
+        const radioNames = new Set();
+        form
+          .querySelectorAll('input[type="radio"]')
+          .forEach((i) => radioNames.add(i.name));
+        const textInputs = form.querySelectorAll(
+          'input[type="text"], input[type="number"]',
+        );
+        const total = radioNames.size + textInputs.length;
+        let answered = 0;
+        radioNames.forEach((name) => {
+          if (formData.get(name)) answered++;
+        });
+        textInputs.forEach((input) => {
+          if (input.value.trim() !== "") answered++;
+        });
+        const percent = Math.round((answered / total) * 100);
+        document.getElementById("survey-progress-bar").style.width =
+          `${percent}%`;
+        document.getElementById("survey-progress-text").textContent =
+          `${percent}% 完了`;
+        document.getElementById("survey-finish-btn").disabled =
+          answered < total;
+      }
+
+      async function finishSurvey() {
+        const form = document.getElementById("survey-form");
+        const formData = new FormData(form);
+        const results = {};
+        formData.forEach((value, key) => {
+          results[key] = value;
+        });
+
+        // サーバーへアンケート結果を保存
+        const res = await api("POST", "/api/survey", results);
+        if (res) {
+          surveyData = results;
+          displaySubjectInfo(results);
+          document.getElementById("survey-screen").hidden = true;
+          document.getElementById("main-app").hidden = false;
+          // init を呼んで他のデータをロード
+          await init();
+        } else {
+          alert(
+            "アンケートの保存に失敗しました。サーバー側の設定を確認してください。",
+          );
+        }
+      }
+
+      function displaySubjectInfo(data) {
+        if (!data) return;
+        document.getElementById("subject-info-banner").style.display = "block";
+        document.getElementById("info-age").textContent = data.attr_age || "-";
+        const genderMap = { male: "男性", female: "女性", other: "その他" };
+        document.getElementById("info-gender").textContent =
+          genderMap[data.attr_gender] || data.attr_gender || "-";
+        document.getElementById("info-freq").textContent =
+          data.attr_freq || "-";
+        document.getElementById("info-context").textContent =
+          data.attr_context || "-";
+      }
+
       function login() {
         const input = document.getElementById("subject-input").value.trim();
         if (!input) return alert("IDを入力してください");
         subjectId = input;
         document.getElementById("login-screen").style.display = "none";
-        document.getElementById("main-app").hidden = false;
+        document.getElementById("survey-screen").hidden = false;
         document.getElementById("display-subject-id").textContent = subjectId;
-        init();
+        buildSurvey();
+        updateSurveyProgress();
       }
 
       function logout() {
@@ -792,6 +1240,7 @@
             id: currentSegment,
             labels: flat,
             cols: flat.length,
+            survey: surveyData, // 被験者の回答を紐付けて送信
           });
           if (!labelset) labelset = { cols: 0, data: {} };
           if (!labelset.data) labelset.data = {};
@@ -947,6 +1396,13 @@
         const segs = await api("GET", "/api/segments");
         const lbls = await api("GET", "/api/labels");
         const meta = await api("GET", "/api/train/meta");
+        const srv = await api("GET", "/api/survey");
+
+        // 保存済みのアンケートがあればパネルに表示
+        if (srv && Object.keys(srv).length > 0) {
+          surveyData = srv;
+          displaySubjectInfo(srv);
+        }
 
         config = cfg || [];
         segments = segs || [];
@@ -959,8 +1415,6 @@
         renderSegments();
         buildForm();
       }
-
-      init();
     </script>
   </body>
 </html>
