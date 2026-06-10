@@ -287,14 +287,18 @@ def download_specific_sections(url, segments, key_info, chord_info):
     if os.path.exists(dataset_path):
         try:
             with open(dataset_path, "r", encoding="utf-8") as f:
-                dataset = json.load(f)
-        except: pass
+                loaded_data = json.load(f)
+                if isinstance(loaded_data, dict):
+                    dataset = loaded_data
+        except:
+            pass
     
-    if "data" not in dataset: dataset["data"] = {}
+    if not isinstance(dataset, dict) or "data" not in dataset or not isinstance(dataset["data"], dict):
+        dataset = {"data": {}}
     
     for item in downloaded_info:
         seg_id = item["id"]
-        if seg_id not in dataset["data"]:
+        if seg_id not in dataset["data"] or not isinstance(dataset["data"][seg_id], dict):
             dataset["data"][seg_id] = {}
         # 調とコード進行を記録
         dataset["data"][seg_id]["global_key"] = key_info

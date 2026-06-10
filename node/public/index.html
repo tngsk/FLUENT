@@ -698,14 +698,6 @@
             >
               Save Labels
             </button>
-            <button
-              class="btn btn-indigo"
-              id="suggest-btn"
-              onclick="predict()"
-              disabled
-            >
-              AI Suggestion
-            </button>
             <span id="loading-msg" class="loading-msg" hidden>Loading...</span>
           </div>
         </div>
@@ -964,15 +956,29 @@
           data.attr_context || "-";
       }
 
-      function login() {
+      async function login() {
         const input = document.getElementById("subject-input").value.trim();
         if (!input) return alert("IDを入力してください");
         subjectId = input;
+
+        // すでにアンケートに回答済みかチェック
+        const srv = await api("GET", "/api/survey");
+
         document.getElementById("login-screen").style.display = "none";
-        document.getElementById("survey-screen").hidden = false;
         document.getElementById("display-subject-id").textContent = subjectId;
-        buildSurvey();
-        updateSurveyProgress();
+
+        if (srv && Object.keys(srv).length > 0) {
+          // 回答済みなら直接ラベリング画面へ
+          surveyData = srv;
+          displaySubjectInfo(srv);
+          document.getElementById("main-app").hidden = false;
+          await init();
+        } else {
+          // 未回答ならアンケート画面へ
+          document.getElementById("survey-screen").hidden = false;
+          buildSurvey();
+          updateSurveyProgress();
+        }
       }
 
       function logout() {
@@ -1036,7 +1042,7 @@
 
       function defaultValues() {
         return config.map((field) => {
-          if (field.type === "color-picker") return "#000000";
+          if (field.type === "color-picker") return "#808080"; // 初期値をグレーに変更
           if (field.type === "slider") return field.min || 0;
           if (field.type === "checkboxes")
             return Array(field.options.length).fill(false);
@@ -1082,6 +1088,12 @@
         container.innerHTML = "";
         config.forEach((field, i) => {
           const wrap = document.createElement("div");
+
+          // 入力があったら保存ボタンを有効化する共通処理
+          const enableSave = () => {
+            document.getElementById("save-btn").disabled = false;
+          };
+
           wrap.className = "field";
           const lbl = document.createElement("label");
           lbl.className = "field-label";
@@ -1092,10 +1104,12 @@
             const inp = document.createElement("input");
             inp.type = "color";
             inp.id = `inp-${i}`;
+            inp.oninput = enableSave;
             wrap.appendChild(inp);
           } else if (field.type === "dropdown") {
             const sel = document.createElement("select");
             sel.id = `inp-${i}`;
+            sel.onchange = enableSave;
             field.options.forEach((opt, j) => {
               const o = document.createElement("option");
               o.value = j;
@@ -1118,6 +1132,7 @@
             val.textContent = field.min || 0;
             inp.oninput = () => {
               val.textContent = inp.value;
+              enableSave();
             };
             row.appendChild(inp);
             row.appendChild(val);
@@ -1130,6 +1145,7 @@
               row.className = "checkbox-row";
               const cb = document.createElement("input");
               cb.type = "checkbox";
+              cb.onchange = enableSave;
               row.appendChild(cb);
               row.appendChild(document.createTextNode(opt));
               grp.appendChild(row);
@@ -1179,7 +1195,6 @@
       function setLoading(on) {
         document.getElementById("loading-msg").hidden = !on;
         document.getElementById("save-btn").disabled = on;
-        document.getElementById("suggest-btn").disabled = on;
       }
 
       // ─── Actions ──────────────────────────────────────────────────────────────────
@@ -1219,16 +1234,17 @@
           `Now Labeling: ${id}`;
         document.getElementById("player").src = `/data/segments/${id}.wav`;
         document.getElementById("label-section").hidden = false;
-        document.getElementById("save-btn").disabled = false;
-        document.getElementById("suggest-btn").disabled = false;
         renderSegments();
-        // labelset 自体が null になっている場合の安全策
-        if (!labelset) labelset = { cols: 0, data: {} };
+
         if (labelset.data && labelset.data[id]) {
-          setFormValues(decodeLabels(labelset.data[id]));
+          // サーバーから { labels, survey } の形式で返ってくるため .labels を参照
+          const savedData = labelset.data[id];
+          const labels = savedData.labels || savedData;
+          setFormValues(decodeLabels(labels));
+          document.getElementById("save-btn").disabled = false; // 既回答なら有効
         } else {
           setFormValues(defaultValues());
-          await predict(true);
+          document.getElementById("save-btn").disabled = true; // 未回答なら触るまで無効
         }
       }
 
@@ -1244,22 +1260,11 @@
           });
           if (!labelset) labelset = { cols: 0, data: {} };
           if (!labelset.data) labelset.data = {};
-          labelset.data[currentSegment] = flat;
+          // ローカルの状態も更新
+          labelset.data[currentSegment] = { labels: flat, survey: surveyData };
           renderSegments();
         } finally {
           setLoading(false);
-        }
-      }
-
-      async function predict(silent = false) {
-        if (!silent) setLoading(true);
-        try {
-          const res = await api("POST", "/api/predict", { id: currentSegment });
-          if (res.prediction) setFormValues(decodeLabels(res.prediction));
-        } catch (e) {
-          if (!silent) console.error(e);
-        } finally {
-          if (!silent) setLoading(false);
         }
       }
 
@@ -1365,9 +1370,8 @@
           status.className = "status status-ok";
           document.getElementById("yt-url").value = "";
 
-          // Refresh segment list
-          segments = await api("GET", "/api/segments");
-          renderSegments();
+          // 全てのデータを再同期してUIを最新の状態にする
+          await init();
         } catch (e) {
           status.textContent = "Failed: " + e.message;
           status.className = "status status-err";
