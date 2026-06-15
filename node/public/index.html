@@ -1012,7 +1012,10 @@
       function defaultValues() {
         return config.map((field) => {
           if (field.type === "color-picker") return "#ffffff"; // 初期値を白に変更
-          if (field.type === "slider") return field.min || 0;
+          if (field.type === "slider")
+            return field.min !== undefined && field.max !== undefined
+              ? Math.round((field.min + field.max) / 2)
+              : field.min || 0;
           if (field.type === "checkboxes")
             return Array(field.options.length).fill(false);
           return null;
@@ -1112,11 +1115,12 @@
             inp.max = field.max;
             inp.step = field.step;
             inp.style.flex = "1";
+            inp.value = Math.round((field.min + field.max) / 2);
 
             const val = document.createElement("span");
             val.className = "slider-val";
             val.id = `val-${i}`;
-            val.textContent = field.min || 0;
+            val.textContent = inp.value;
 
             inp.oninput = () => {
               val.textContent = inp.value;
