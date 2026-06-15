@@ -1,6 +1,53 @@
 [
   { "id": "color", "type": "color-picker", "label": "Color" },
-  { "id": "mood", "type": "dropdown", "label": "Mood", "options": ["Happy", "Sad", "Angry"] },
-  { "id": "intensity", "type": "slider", "label": "Intensity" },
-  { "id": "instruments", "type": "checkboxes", "label": "Instruments", "options": ["Piano", "Guitar", "Bass", "Drums", "Synth"] }
+  {
+    "id": "liking",
+    "type": "slider",
+    "label": "その曲がどのくらい好きか",
+    "min": 0,
+    "max": 100,
+    "step": 1,
+    "minLabel": "0%＝全く好きでない",
+    "maxLabel": "100%＝とても好き"
+  },
+  {
+    "id": "brightness",
+    "type": "slider",
+    "label": "曲の明るさ",
+    "min": 0,
+    "max": 100,
+    "step": 1,
+    "minLabel": "0%＝とても暗い",
+    "maxLabel": "100%＝とても明るい"
+  },
+  {
+    "id": "arousal",
+    "type": "slider",
+    "label": "曲の覚醒度",
+    "min": 0,
+    "max": 100,
+    "step": 1,
+    "minLabel": "0%＝とても落ち着く曲",
+    "maxLabel": "100%＝とても刺激的な曲"
+  },
+  {
+    "id": "imagery_clarity",
+    "type": "slider",
+    "label": "浮かんだ情景/イメージのはっきりさ",
+    "min": 0,
+    "max": 100,
+    "step": 1,
+    "minLabel": "0%＝全く浮かばなかった",
+    "maxLabel": "100%＝とてもはっきり浮かんだ"
+  },
+  {
+    "id": "color_confidence",
+    "type": "slider",
+    "label": "色選択の確信度",
+    "min": 0,
+    "max": 100,
+    "step": 1,
+    "minLabel": "0%＝全くしっくりこない",
+    "maxLabel": "100%＝とても合っている"
+  }
 ]

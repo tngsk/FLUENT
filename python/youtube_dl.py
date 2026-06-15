@@ -13,6 +13,10 @@ def download_audio(url, start_time, duration, output_dir):
         print('Error: yt-dlp is not installed.', file=sys.stderr)
         sys.exit(1)
 
+    if not url.startswith(("http://", "https://")):
+        print(f"Error: Invalid URL provided: {url[:50]}...", file=sys.stderr)
+        sys.exit(1)
+
     os.makedirs(output_dir, exist_ok=True)
 
     # Next ID

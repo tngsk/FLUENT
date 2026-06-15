@@ -1,0 +1,16 @@
+{
+  "lsp": {
+    "pylance": {
+      "settings": {
+        "python.pythonPath": ".venv/bin/python"
+      }
+    }
+  },
+  "languages": {
+    "Python": {
+      "formatter": "black",
+      "formatter_arguments": ["--line-length", "100"],
+      "enable_language_server": true
+    }
+  }
+}

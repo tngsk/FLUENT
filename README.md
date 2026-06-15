@@ -91,9 +91,9 @@ uv run python python/extractor.py
 
 2. ブラウザでセグメントを試聴 → ラベル入力 → Save Labels
 
-3. UI の Train Model ボタンで学習。epoch ごとの loss がリアルタイム表示される
+3. 学習は CLI または API で実行（UI の Train Model ボタンは廃止）
 
-4. 未ラベルセグメントを選択すると AI Suggestion が自動表示される
+4. 未ラベルセグメントを選択すると AI Suggestion が自動表示される（API 経由）
 
 ## 詳細
 
