@@ -9,7 +9,7 @@ Module D: Inference Engine (Predictor)
 【処理フロー】
 1. 学習済み MLP モデル（model.pkl）をロード
 2. dataset.json から特徴量（X: 26次元）を取得
-3. モデルで感性ラベル予測（Y: 10次元）を実行
+3. モデルで感性ラベル予測（Y: 8次元）を実行
 4. 出力を 0.0～1.0 の範囲にクリップ（アダプター互換性確保）
 5. 結果を JSON で出力
 
@@ -18,7 +18,7 @@ Module D: Inference Engine (Predictor)
     ↓
   MLP forward pass
     ↓
-  予測値（10次元）
+  予測値（8次元）
     ↓
   np.clip(y, 0.0, 1.0)
     ↓
@@ -26,17 +26,17 @@ Module D: Inference Engine (Predictor)
 
 【出力例】predict.json（またはstdout）
 {
-  "cols": 10,
+  "cols": 8,
   "data": {
-    "example-001": [1.0, 0.0, 0.0, 0.8, 1.0, 1, 0, 0, 0, 0],
-    "example-002": [0.0, 0.0, 1.0, 0.2, 0.5, 0, 0, 1, 0, 0]
+    "example-001": [1.0, 0.0, 0.0, 0.5, 0.7, 0.6, 0.8, 0.9],
+    "example-002": [0.0, 0.0, 1.0, 0.3, 0.2, 0.4, 0.5, 0.6]
   }
 }
 
 【重要】
   - モデルの学習に使用した dataset.json と同じスケーリング体系を使用
     （訓練時 StandardScaler でフィット済み）
-  - 10次元出力: RGB(3) + Mood(1) + Intensity(1) + Instruments(5)
+  - 8次元出力: RGB(3) + Liking(1) + Brightness(1) + Arousal(1) + Imagery Clarity(1) + Color Confidence(1)
   - 出力は常に 0.0～1.0 クリップされる（推論が 0.0 より小さい、1.0 より大きい値を出力してもハンドル）
   - target_id を指定すると、そのセグメント ID のみ予測
 

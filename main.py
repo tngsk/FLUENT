@@ -1,4 +1,7 @@
 import argparse
+import subprocess
+import os
+import sys
 import glob
 import json
 import os
@@ -353,16 +356,18 @@ def download_specific_sections(url, segments, key_info, chord_info):
     if os.path.exists(dataset_path):
         try:
             with open(dataset_path, "r", encoding="utf-8") as f:
-                dataset = json.load(f)
-        except Exception:
+                loaded_data = json.load(f)
+                if isinstance(loaded_data, dict):
+                    dataset = loaded_data
+        except:
             pass
-
-    if "data" not in dataset:
-        dataset["data"] = {}
-
+    
+    if not isinstance(dataset, dict) or "data" not in dataset or not isinstance(dataset["data"], dict):
+        dataset = {"data": {}}
+    
     for item in downloaded_info:
         seg_id = item["id"]
-        if seg_id not in dataset["data"]:
+        if seg_id not in dataset["data"] or not isinstance(dataset["data"][seg_id], dict):
             dataset["data"][seg_id] = {}
         # 調とコード進行を記録
         dataset["data"][seg_id]["global_key"] = key_info
@@ -402,11 +407,8 @@ def main():
         )
 
         if not os.path.exists(temp_full_audio):
-            print(
-                "エラー: メイン音声ファイルのダウンロードに失敗しました。URLを確認してください。"
-            )
-            return
-
+            raise FileNotFoundError("エラー: メイン音声ファイルのダウンロードに失敗しました。URLを確認してください。")
+        
         # 調とコード進行の分析（分割前に行う）
         y_full, sr_full = librosa.load(temp_full_audio, duration=120)
         key_info, chord_info = estimate_key_and_chords(y_full, sr_full)
@@ -424,8 +426,12 @@ def main():
         download_specific_sections(url, segments, key_info, chord_info)
         print("\n完了しました。")
     else:
-        print("セグメントを特定できませんでした。")
+        raise ValueError("セグメントを特定できませんでした。チャプター情報がないか、音響解析で境界を見つけられませんでした。")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
