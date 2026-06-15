@@ -65,24 +65,27 @@ PYTHON_PATH=.venv/bin/python
 
 ## API 一覧
 
-| メソッド | パス | 何をするか |
-|---|---|---|
-| GET | `/api/config` | `config.json` を返す（フォームの定義） |
-| GET | `/api/segments` | セグメント ID の一覧を返す |
-| GET | `/api/labels` | `labelset.json` を返す |
-| POST | `/api/labels` | ラベルを1件保存（自動バックアップあり） |
-| POST | `/api/predict` | 指定セグメントの AI 予測値を返す |
-| POST | `/api/train` | 学習開始（SSE ストリームで進捗配信）。`resume: true` で継続学習 |
-| POST | `/api/train/stop` | 学習を中断（途中のモデルを保存して終了） |
-| DELETE | `/api/model` | モデルと学習履歴を削除（リセット） |
-| GET | `/api/train/meta` | 最終学習の日時と対象セグメント一覧を返す |
+| メソッド | パス              | 何をするか                                                      |
+| -------- | ----------------- | --------------------------------------------------------------- |
+| GET      | `/api/config`     | `config.json` を返す（フォームの定義）                          |
+| GET      | `/api/segments`   | セグメント ID の一覧を返す                                      |
+| GET      | `/api/labels`     | `labelset.json` を返す                                          |
+| POST     | `/api/labels`     | ラベルを1件保存（自動バックアップあり）                         |
+| POST     | `/api/predict`    | 指定セグメントの AI 予測値を返す                                |
+| POST     | `/api/train`      | 学習開始（SSE ストリームで進捗配信）。`resume: true` で継続学習 |
+| POST     | `/api/train/stop` | 学習を中断（途中のモデルを保存して終了）                        |
+| DELETE   | `/api/model`      | モデルと学習履歴を削除（リセット）                              |
+| GET      | `/api/train/meta` | 最終学習の日時と対象セグメント一覧を返す                        |
 
 ### Python 呼び出し
 
 `spawnPython` ヘルパーを使ってください。
 
 ```js
-const { out, code } = await spawnPython("python/predict.py", ["--arg", "value"])
+const { out, code } = await spawnPython("python/predict.py", [
+  "--arg",
+  "value",
+]);
 // exit code 0 → 成功
 // exit code 2 → モデル未存在（エラーではない）
 // それ以外   → reject
@@ -95,12 +98,12 @@ const { out, code } = await spawnPython("python/predict.py", ["--arg", "value"])
 `POST /api/train` はレスポンスを `text/event-stream` として返します。
 各 `data:` 行は JSON です。
 
-| 内容 | 例 |
-|---|---|
-| 各 epoch | `{ "epoch": 5, "loss": 0.0123 }` |
+| 内容     | 例                                                       |
+| -------- | -------------------------------------------------------- |
+| 各 epoch | `{ "epoch": 5, "loss": 0.0123 }`                         |
 | 収束通知 | `{ "status": "converged", "epoch": 42, "loss": 0.0001 }` |
-| 中断保存 | `{ "status": "interrupted", "saved": true }` |
-| 終了 | `{ "status": "done", "success": true }` |
+| 中断保存 | `{ "status": "interrupted", "saved": true }`             |
+| 終了     | `{ "status": "done", "success": true }`                  |
 
 ---
 
@@ -110,25 +113,25 @@ const { out, code } = await spawnPython("python/predict.py", ["--arg", "value"])
 
 - 上部：セグメント選択ボタン（ステータスドット付き）+ pending 再学習推奨メッセージ
 - 中部：試聴プレイヤー + ラベル入力フォーム + Save / AI Suggestion ボタン
-- 下部：学習パネル（Alpha スライダー・Train / Stop ボタン・ログ）
+- 下部：学習パネルは存在しません（学習は CLI/API で実行されます）
 
 ### 主要な変数
 
 ```js
-let config          // config.json の内容
-let segments        // セグメント ID の配列
-let labelset        // 保存済みラベルの全データ
-let trainedIds      // 最後の学習に含まれたセグメントの ID 一覧
-let currentSegment  // 今選択中のセグメント
+let config; // config.json の内容
+let segments; // セグメント ID の配列
+let labelset; // 保存済みラベルの全データ
+let trainedIds; // 最後の学習に含まれたセグメントの ID 一覧
+let currentSegment; // 今選択中のセグメント
 ```
 
 ### セグメントのステータス
 
 ```js
 function segmentStatus(id) {
-  if (!labelset.data[id]) return 'unlabeled'              // グレー
-  if (trainedIds.includes(id)) return 'trained'           // 緑
-  return 'pending'                                         // 黄
+  if (!labelset.data[id]) return "unlabeled"; // グレー
+  if (trainedIds.includes(id)) return "trained"; // 緑
+  return "pending"; // 黄
 }
 ```
 
@@ -185,7 +188,7 @@ checkboxes: [✓,✗,✓]   →  [1.0, 0.0, 1.0]
 #### 5. `defaultValues()` にデフォルト値を追加
 
 ```js
-if (field.type === 'YOUR_TYPE') return /* 初期値 */
+if (field.type === "YOUR_TYPE") return; /* 初期値 */
 ```
 
 ---
@@ -241,7 +244,7 @@ if (field.type === 'rating') return Math.ceil(field.max / 2)
 
 モデルがまだない場合はプレビューをスキップするだけです。
 
-### 学習（Train Model ボタンを押したとき）
+### 学習（API 実行）
 
 ```
 POST /api/train → SSE ストリーム開始

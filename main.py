@@ -2,6 +2,7 @@ import json
 import argparse
 import subprocess
 import os
+import sys
 import glob
 try:
     import librosa
@@ -334,8 +335,7 @@ def main():
         subprocess.run(['yt-dlp', '-x', '--audio-format', 'mp3', '-o', temp_full_audio, url], check=True)
 
         if not os.path.exists(temp_full_audio):
-            print("エラー: メイン音声ファイルのダウンロードに失敗しました。URLを確認してください。")
-            return
+            raise FileNotFoundError("エラー: メイン音声ファイルのダウンロードに失敗しました。URLを確認してください。")
         
         # 調とコード進行の分析（分割前に行う）
         y_full, sr_full = librosa.load(temp_full_audio, duration=120)
@@ -354,8 +354,12 @@ def main():
         download_specific_sections(url, segments, key_info, chord_info)
         print("\n完了しました。")
     else:
-        print("セグメントを特定できませんでした。")
+        raise ValueError("セグメントを特定できませんでした。チャプター情報がないか、音響解析で境界を見つけられませんでした。")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)

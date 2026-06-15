@@ -158,6 +158,12 @@
       input[type="range"] {
         flex: 1;
       }
+      .slider-label {
+        font-size: 0.75rem;
+        color: #9ca3af;
+        min-width: 2rem;
+        text-align: center;
+      }
       .slider-val {
         font-size: 0.875rem;
         color: #6b7280;
@@ -261,9 +267,6 @@
         color: #374151;
         white-space: nowrap;
       }
-      #alpha-slider {
-        width: 10rem;
-      }
       .status {
         font-size: 0.875rem;
         font-weight: 500;
@@ -276,16 +279,6 @@
       }
       .status-err {
         color: #dc2626;
-      }
-      #train-log {
-        font-family: monospace;
-        font-size: 0.75rem;
-        background: #f9fafb;
-        border-radius: 0.375rem;
-        padding: 0.75rem;
-        max-height: 8rem;
-        overflow-y: auto;
-        border: 1px solid #e5e7eb;
       }
 
       /* Survey Styles */
@@ -589,7 +582,7 @@
             </button>
           </div>
         </div>
-        <p class="subtitle">Audio to Sensitivity Mapping</p>
+        <p class="subtitle">Audio Labeling</p>
       </header>
 
       <!-- 被験者属性の表示パネル（データ分析・確認用） -->
@@ -703,41 +696,7 @@
         </div>
       </div>
 
-      <div class="card">
-        <h2 style="font-size: 1rem; font-weight: 500; margin-bottom: 1rem">
-          Model Training
-        </h2>
-        <div class="train-controls">
-          <span class="alpha-label"
-            >Alpha: <span id="alpha-val">0.01</span></span
-          >
-          <input
-            type="range"
-            id="alpha-slider"
-            min="0.001"
-            max="0.1"
-            step="0.001"
-            value="0.01"
-            oninput="
-              document.getElementById('alpha-val').textContent = this.value
-            "
-          />
-          <button class="btn btn-purple" id="train-btn" onclick="trainModel()">
-            Train Model
-          </button>
-          <button
-            class="btn btn-red"
-            id="stop-btn"
-            onclick="stopTraining()"
-            hidden
-          >
-            Stop
-          </button>
-          <span id="pending-msg" class="status status-warn" hidden></span>
-          <span id="train-status" class="status"></span>
-        </div>
-        <div id="train-log" hidden></div>
-      </div>
+      <!-- Model Training UI removed: training is done via CLI/API -->
     </div>
 
     <script>
@@ -1000,6 +959,11 @@
               .forEach((h) => flat.push(parseInt(h, 16) / 255));
           } else if (field.type === "dropdown") {
             flat.push(val / (field.options.length - 1));
+          } else if (field.type === "slider") {
+            // スライダーの値（min-max）を 0.0-1.0 に正規化
+            const min = field.min !== undefined ? field.min : 0;
+            const max = field.max !== undefined ? field.max : 100;
+            flat.push((val - min) / (max - min));
           } else if (field.type === "checkboxes") {
             val.forEach((v) => flat.push(v ? 1.0 : 0.0));
           } else {
@@ -1029,6 +993,11 @@
             );
           } else if (field.type === "dropdown") {
             return Math.round(flat[idx++] * (field.options.length - 1));
+          } else if (field.type === "slider") {
+            // 0.0-1.0 を スライダーの値（min-max）に戻す
+            const min = field.min !== undefined ? field.min : 0;
+            const max = field.max !== undefined ? field.max : 100;
+            return Math.round(flat[idx++] * (max - min) + min);
           } else if (field.type === "checkboxes") {
             return Array.from(
               { length: field.options.length },
@@ -1042,7 +1011,7 @@
 
       function defaultValues() {
         return config.map((field) => {
-          if (field.type === "color-picker") return "#808080"; // 初期値をグレーに変更
+          if (field.type === "color-picker") return "#ffffff"; // 初期値を白に変更
           if (field.type === "slider") return field.min || 0;
           if (field.type === "checkboxes")
             return Array(field.options.length).fill(false);
@@ -1076,8 +1045,10 @@
           (id) => segmentStatus(id) === "pending",
         ).length;
         const msg = document.getElementById("pending-msg");
-        msg.textContent = `${n} pending — retrain recommended`;
-        msg.hidden = n === 0;
+        if (msg) {
+          msg.textContent = `${n} pending — retrain recommended`;
+          msg.hidden = n === 0;
+        }
         list.hidden = wasHidden;
         list.style.display = wasHidden ? "none" : "flex";
       }
@@ -1120,22 +1091,48 @@
           } else if (field.type === "slider") {
             const row = document.createElement("div");
             row.className = "slider-row";
+
+            // Min ラベル
+            const minLabel = document.createElement("span");
+            minLabel.className = "slider-label";
+            minLabel.textContent = field.minLabel || "0%";
+            row.appendChild(minLabel);
+
+            // スライダーコンテナ
+            const inputContainer = document.createElement("div");
+            inputContainer.style.display = "flex";
+            inputContainer.style.flex = "1";
+            inputContainer.style.alignItems = "center";
+            inputContainer.style.gap = "0.5rem";
+
             const inp = document.createElement("input");
             inp.type = "range";
             inp.id = `inp-${i}`;
             inp.min = field.min;
             inp.max = field.max;
             inp.step = field.step;
+            inp.style.flex = "1";
+
             const val = document.createElement("span");
             val.className = "slider-val";
             val.id = `val-${i}`;
             val.textContent = field.min || 0;
+
             inp.oninput = () => {
               val.textContent = inp.value;
               enableSave();
             };
-            row.appendChild(inp);
-            row.appendChild(val);
+
+            inputContainer.appendChild(inp);
+            inputContainer.appendChild(val);
+            row.appendChild(inputContainer);
+
+            // Max ラベル
+            const maxLabel = document.createElement("span");
+            maxLabel.className = "slider-label";
+            maxLabel.textContent = field.maxLabel || "100%";
+            row.appendChild(maxLabel);
+
             wrap.appendChild(row);
           } else if (field.type === "checkboxes") {
             const grp = document.createElement("div");
@@ -1268,81 +1265,6 @@
         }
       }
 
-      // 学習を開始し、SSE ストリームで進捗を受け取る
-      async function trainModel() {
-        const alpha =
-          parseFloat(document.getElementById("alpha-slider").value) || 0.01;
-        document.getElementById("train-log").innerHTML = "";
-        document.getElementById("train-log").hidden = false;
-        document.getElementById("train-status").textContent = "";
-        document.getElementById("train-status").className = "status";
-        document.getElementById("train-btn").disabled = true;
-        document.getElementById("stop-btn").hidden = false;
-
-        const res = await fetch("/api/train", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ alpha }),
-        });
-
-        if (!res.ok) {
-          const err = await res.json();
-          setTrainStatus(err.error, "err");
-          document.getElementById("train-btn").disabled = false;
-          document.getElementById("stop-btn").hidden = true;
-          return;
-        }
-
-        // SSE メッセージは "\n\n" で区切られる。チャンクが分割されても正しく処理できるよう buf でバッファリングする
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buf = "";
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buf += decoder.decode(value, { stream: true });
-          const parts = buf.split("\n\n");
-          buf = parts.pop(); // 末尾の未完了メッセージを次のチャンクに持ち越す
-          for (const part of parts) {
-            const line = part.split("\n").find((l) => l.startsWith("data: "));
-            if (!line) continue;
-            let data;
-            try {
-              data = JSON.parse(line.slice(6));
-            } catch {
-              continue;
-            }
-
-            if (data.status === "done") {
-              document.getElementById("train-btn").disabled = false;
-              document.getElementById("stop-btn").hidden = true;
-              if (data.success) {
-                setTrainStatus("Done", "ok");
-                const meta = await api("GET", "/api/train/meta");
-                trainedIds = meta.trained_ids || [];
-                renderSegments();
-              } else {
-                setTrainStatus("Failed", "err");
-              }
-            } else if (data.status === "converged") {
-              setTrainStatus("Converged", "ok");
-              appendLog(
-                `epoch ${data.epoch}: loss = ${data.loss.toFixed(6)} (converged)`,
-              );
-            } else if (data.status === "interrupted") {
-              setTrainStatus("Interrupted — model saved", "warn");
-            } else if (data.epoch !== undefined) {
-              appendLog(`epoch ${data.epoch}: loss = ${data.loss.toFixed(6)}`);
-            }
-          }
-        }
-      }
-
-      async function stopTraining() {
-        await api("POST", "/api/train/stop");
-      }
-
       async function downloadYouTube() {
         const url = document.getElementById("yt-url").value;
         const start = document.getElementById("yt-start").value;
@@ -1378,20 +1300,6 @@
         } finally {
           btn.disabled = false;
         }
-      }
-
-      function setTrainStatus(text, type) {
-        const el = document.getElementById("train-status");
-        el.textContent = text;
-        el.className = `status status-${type}`;
-      }
-
-      function appendLog(text) {
-        const log = document.getElementById("train-log");
-        const div = document.createElement("div");
-        div.textContent = text;
-        log.appendChild(div);
-        log.scrollTop = log.scrollHeight;
       }
 
       // ─── Init ─────────────────────────────────────────────────────────────────────
