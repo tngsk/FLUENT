@@ -71,9 +71,9 @@
         background: #e5e7eb;
       }
       .seg-btn.active {
-        background: #3b82f6;
+        background: #5baff0;
         color: white;
-        border-color: #2563eb;
+        border-color: #5baff0;
       }
       .dot {
         width: 8px;
@@ -85,11 +85,8 @@
       .dot-unlabeled {
         background: #9ca3af;
       }
-      .dot-pending {
-        background: #facc15;
-      }
-      .dot-trained {
-        background: #22c55e;
+      .dot-saved {
+        background: #5baff0;
       }
       .legend {
         display: flex;
@@ -205,11 +202,11 @@
         cursor: not-allowed;
       }
       .btn-green {
-        background: #16a34a;
+        background: #78f584;
         color: white;
       }
       .btn-indigo {
-        background: #4f46e5;
+        background: #5baff0;
         color: white;
       }
       .btn-gray {
@@ -226,7 +223,7 @@
       }
       .loading-msg {
         font-size: 0.875rem;
-        color: #2563eb;
+        color: #5baff0;
         font-weight: 500;
       }
 
@@ -287,7 +284,7 @@
         top: 0;
         background: white;
         padding: 1rem;
-        border-bottom: 2px solid #3b82f6;
+        border-bottom: 2px solid #5baff0;
         z-index: 100;
         margin-bottom: 2rem;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -300,7 +297,7 @@
         margin-bottom: 0.5rem;
       }
       .progress-fill {
-        background: #3b82f6;
+        background: #5baff0;
         height: 100%;
         border-radius: 9999px;
         transition: width 0.3s ease;
@@ -313,7 +310,7 @@
         font-size: 1.25rem;
         margin-bottom: 1rem;
         color: #111827;
-        border-left: 4px solid #3b82f6;
+        border-left: 4px solid #5baff0;
         padding-left: 0.75rem;
       }
       .question-item {
@@ -413,7 +410,7 @@
             font-size: 0.875rem;
           "
         >
-          <span style="font-weight: bold; color: #3b82f6">回答の進捗状況</span>
+          <span style="font-weight: bold; color: #5baff0">回答の進捗状況</span>
           <span id="survey-progress-text">0% 完了</span>
         </div>
       </div>
@@ -429,7 +426,7 @@
         <form id="survey-form" onchange="updateSurveyProgress()">
           <!-- BFI-2 -->
           <div class="survey-section" id="section-bfi">
-            <h2>○ BFI-2</h2>
+            <h2>○ あなた自身について</h2>
             <p class="subtitle" style="margin-bottom: 1rem">
               各項目がどの程度あなた自身に当てはまるか選択してください。
             </p>
@@ -530,7 +527,7 @@
 
           <!-- 音楽特徴量 -->
           <div class="survey-section" id="section-features">
-            <h2>○ 音楽特徴量の嗜好</h2>
+            <h2>○ 音楽の趣味・趣向について</h2>
           </div>
 
           <!-- 歌詞・想像力・機能・経験 (小カテゴリ) -->
@@ -584,31 +581,6 @@
         </div>
         <p class="subtitle">Audio Labeling</p>
       </header>
-
-      <!-- 被験者属性の表示パネル（データ分析・確認用） -->
-      <div
-        id="subject-info-banner"
-        class="card"
-        style="
-          padding: 1rem;
-          background: #f0fdf4;
-          border: 1px solid #bbf7d0;
-          display: none;
-          margin-bottom: 1rem;
-        "
-      >
-        <div
-          style="display: flex; gap: 2rem; font-size: 0.875rem; flex-wrap: wrap"
-        >
-          <div><strong>被験者属性:</strong></div>
-          <div>年齢: <span id="info-age">-</span></div>
-          <div>性別: <span id="info-gender">-</span></div>
-          <div>音楽聴取頻度: <span id="info-freq">-</span> / 5</div>
-          <div style="flex-basis: 100%; margin-top: 0.25rem; color: #6b7280">
-            聴取状況: <span id="info-context">-</span>
-          </div>
-        </div>
-      </div>
 
       <div class="card">
         <h2 style="font-size: 1rem; font-weight: 500; margin-bottom: 1rem">
@@ -671,8 +643,7 @@
         <div class="segment-list" id="segment-list" hidden></div>
         <div class="legend">
           <span><span class="dot dot-unlabeled"></span>unlabeled</span>
-          <span><span class="dot dot-pending"></span>pending</span>
-          <span><span class="dot dot-trained"></span>trained</span>
+          <span><span class="dot dot-saved"></span>saved</span>
         </div>
 
         <div id="label-section" hidden>
@@ -704,7 +675,6 @@
       let config = [],
         segments = [],
         labelset = { cols: 0, data: {} },
-        trainedIds = [],
         currentSegment = null,
         subjectId = null,
         surveyData = null;
@@ -791,17 +761,36 @@
           text,
           low = "当てはまらない",
           high = "当てはまる",
-        ) => `
-          <div class="question-item">
-            <div class="question-text">${text}</div>
-            <div class="likert-scale">
-              <label class="likert-option"><span class="likert-label">${low}</span><input type="radio" name="${name}" value="1" required><span>1</span></label>
-              <label class="likert-option"><input type="radio" name="${name}" value="2"><span>2</span></label>
-              <label class="likert-option"><input type="radio" name="${name}" value="3"><span>3</span></label>
-              <label class="likert-option"><input type="radio" name="${name}" value="4"><span>4</span></label>
-              <label class="likert-option"><span class="likert-label">${high}</span><input type="radio" name="${name}" value="5"><span>5</span></label>
-            </div>
-          </div>`;
+          count = 5,
+        ) => {
+          const options = [];
+          if (count === 2) {
+            options.push(
+              `<label class="likert-option"><span class="likert-label">${low}</span><input type="radio" name="${name}" value="1" required><span>1</span></label>`,
+              `<label class="likert-option"><span class="likert-label">${high}</span><input type="radio" name="${name}" value="2"><span>2</span></label>`,
+            );
+          } else {
+            options.push(
+              `<label class="likert-option"><span class="likert-label">${low}</span><input type="radio" name="${name}" value="1" required><span>1</span></label>`,
+            );
+            for (let i = 2; i < count; i += 1) {
+              options.push(
+                `<label class="likert-option"><input type="radio" name="${name}" value="${i}"><span>${i}</span></label>`,
+              );
+            }
+            options.push(
+              `<label class="likert-option"><span class="likert-label">${high}</span><input type="radio" name="${name}" value="${count}"><span>${count}</span></label>`,
+            );
+          }
+
+          return `
+            <div class="question-item">
+              <div class="question-text">${text}</div>
+              <div class="likert-scale">
+                ${options.join("")}
+              </div>
+            </div>`;
+        };
 
         const bfiCont = document.getElementById("section-bfi");
         if (bfiCont.children.length <= 2) {
@@ -846,7 +835,15 @@
           otherCont.innerHTML +=
             '<h3 style="margin-top:1.5rem">○ 音楽経験</h3>' +
             SURVEY_CONFIG.experience
-              .map((q, i) => createLikert(`exp_${i}`, `${i + 1}. ${q}`))
+              .map((q, i) =>
+                createLikert(
+                  `exp_${i}`,
+                  `${i + 1}. ${q}`,
+                  "当てはまらない",
+                  "当てはまる",
+                  2,
+                ),
+              )
               .join("");
         }
       }
@@ -890,7 +887,6 @@
         const res = await api("POST", "/api/survey", results);
         if (res) {
           surveyData = results;
-          displaySubjectInfo(results);
           document.getElementById("survey-screen").hidden = true;
           document.getElementById("main-app").hidden = false;
           // init を呼んで他のデータをロード
@@ -900,19 +896,6 @@
             "アンケートの保存に失敗しました。サーバー側の設定を確認してください。",
           );
         }
-      }
-
-      function displaySubjectInfo(data) {
-        if (!data) return;
-        document.getElementById("subject-info-banner").style.display = "block";
-        document.getElementById("info-age").textContent = data.attr_age || "-";
-        const genderMap = { male: "男性", female: "女性", other: "その他" };
-        document.getElementById("info-gender").textContent =
-          genderMap[data.attr_gender] || data.attr_gender || "-";
-        document.getElementById("info-freq").textContent =
-          data.attr_freq || "-";
-        document.getElementById("info-context").textContent =
-          data.attr_context || "-";
       }
 
       async function login() {
@@ -929,7 +912,6 @@
         if (srv && Object.keys(srv).length > 0) {
           // 回答済みなら直接ラベリング画面へ
           surveyData = srv;
-          displaySubjectInfo(srv);
           document.getElementById("main-app").hidden = false;
           await init();
         } else {
@@ -1012,10 +994,7 @@
       function defaultValues() {
         return config.map((field) => {
           if (field.type === "color-picker") return "#ffffff"; // 初期値を白に変更
-          if (field.type === "slider")
-            return field.min !== undefined && field.max !== undefined
-              ? Math.round((field.min + field.max) / 2)
-              : field.min || 0;
+          if (field.type === "slider") return 3;
           if (field.type === "checkboxes")
             return Array(field.options.length).fill(false);
           return null;
@@ -1025,8 +1004,7 @@
       // ─── Segment status ───────────────────────────────────────────────────────────
       function segmentStatus(id) {
         if (!labelset.data || !labelset.data[id]) return "unlabeled";
-        if (trainedIds.includes(id)) return "trained";
-        return "pending";
+        return "saved";
       }
 
       // ─── Rendering ────────────────────────────────────────────────────────────────
@@ -1044,12 +1022,10 @@
           btn.appendChild(document.createTextNode(id));
           list.appendChild(btn);
         });
-        const n = segments.filter(
-          (id) => segmentStatus(id) === "pending",
-        ).length;
+        const n = segments.filter((id) => segmentStatus(id) === "saved").length;
         const msg = document.getElementById("pending-msg");
         if (msg) {
-          msg.textContent = `${n} pending — retrain recommended`;
+          msg.textContent = `${n} saved`;
           msg.hidden = n === 0;
         }
         list.hidden = wasHidden;
@@ -1092,52 +1068,34 @@
             });
             wrap.appendChild(sel);
           } else if (field.type === "slider") {
-            const row = document.createElement("div");
-            row.className = "slider-row";
+            const likert = document.createElement("div");
+            likert.className = "likert-scale";
+            likert.id = `inp-${i}`;
 
-            // Min ラベル
-            const minLabel = document.createElement("span");
-            minLabel.className = "slider-label";
-            minLabel.textContent = field.minLabel || "0%";
-            row.appendChild(minLabel);
+            const lowLabel = field.minLabel || "1";
+            const highLabel = field.maxLabel || "5";
 
-            // スライダーコンテナ
-            const inputContainer = document.createElement("div");
-            inputContainer.style.display = "flex";
-            inputContainer.style.flex = "1";
-            inputContainer.style.alignItems = "center";
-            inputContainer.style.gap = "0.5rem";
+            for (let value = 1; value <= 5; value += 1) {
+              const label = document.createElement("label");
+              label.className = "likert-option";
+              label.innerHTML = `
+                ${value === 1 ? `<span class="likert-label">${lowLabel}</span>` : ""}
+                <input type="radio" name="inp-${i}" value="${value}">
+                <span>${value}</span>`;
+              label.querySelector("input").onchange = enableSave;
+              likert.appendChild(label);
+            }
 
-            const inp = document.createElement("input");
-            inp.type = "range";
-            inp.id = `inp-${i}`;
-            inp.min = field.min;
-            inp.max = field.max;
-            inp.step = field.step;
-            inp.style.flex = "1";
-            inp.value = Math.round((field.min + field.max) / 2);
+            // Add a second label for the last option, if provided
+            const lastOption = likert.querySelectorAll(".likert-option")[4];
+            if (lastOption && highLabel) {
+              const labelSpan = document.createElement("span");
+              labelSpan.className = "likert-label";
+              labelSpan.textContent = highLabel;
+              lastOption.insertBefore(labelSpan, lastOption.firstChild);
+            }
 
-            const val = document.createElement("span");
-            val.className = "slider-val";
-            val.id = `val-${i}`;
-            val.textContent = inp.value;
-
-            inp.oninput = () => {
-              val.textContent = inp.value;
-              enableSave();
-            };
-
-            inputContainer.appendChild(inp);
-            inputContainer.appendChild(val);
-            row.appendChild(inputContainer);
-
-            // Max ラベル
-            const maxLabel = document.createElement("span");
-            maxLabel.className = "slider-label";
-            maxLabel.textContent = field.maxLabel || "100%";
-            row.appendChild(maxLabel);
-
-            wrap.appendChild(row);
+            wrap.appendChild(likert);
           } else if (field.type === "checkboxes") {
             const grp = document.createElement("div");
             grp.id = `inp-${i}`;
@@ -1163,8 +1121,12 @@
             return document.getElementById(`inp-${i}`).value;
           if (field.type === "dropdown")
             return parseInt(document.getElementById(`inp-${i}`).value);
-          if (field.type === "slider")
-            return parseFloat(document.getElementById(`inp-${i}`).value);
+          if (field.type === "slider") {
+            const checked = document.querySelector(
+              `input[name="inp-${i}"]:checked`,
+            );
+            return checked ? parseInt(checked.value, 10) : null;
+          }
           if (field.type === "checkboxes")
             return Array.from(
               document.getElementById(`inp-${i}`).querySelectorAll("input"),
@@ -1180,8 +1142,10 @@
           } else if (field.type === "dropdown") {
             document.getElementById(`inp-${i}`).value = val;
           } else if (field.type === "slider") {
-            document.getElementById(`inp-${i}`).value = val;
-            document.getElementById(`val-${i}`).textContent = val;
+            const option = document.querySelector(
+              `input[name="inp-${i}"][value="${val}"]`,
+            );
+            if (option) option.checked = true;
           } else if (field.type === "checkboxes") {
             document
               .getElementById(`inp-${i}`)
@@ -1311,13 +1275,11 @@
         const cfg = await api("GET", "/api/config");
         const segs = await api("GET", "/api/segments");
         const lbls = await api("GET", "/api/labels");
-        const meta = await api("GET", "/api/train/meta");
         const srv = await api("GET", "/api/survey");
 
         // 保存済みのアンケートがあればパネルに表示
         if (srv && Object.keys(srv).length > 0) {
           surveyData = srv;
-          displaySubjectInfo(srv);
         }
 
         config = cfg || [];
@@ -1327,7 +1289,6 @@
         if (!labelset || typeof labelset !== "object")
           labelset = { cols: 0, data: {} };
         if (!labelset.data) labelset.data = {};
-        trainedIds = (meta && meta.trained_ids) || [];
         renderSegments();
         buildForm();
       }
