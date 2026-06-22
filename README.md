@@ -54,7 +54,7 @@ FLUENT/
   - 形式: `{"cols": 26, "data": {"example-001": [0.12, -0.45, ...]}}`
   - Extractorが出力し、Trainer/Predictorが読み込みます。すべての値は標準化(Standardization)されています。また、`main.py` などの自動処理により、`global_key` および `global_chords` も追加記録されます。
 - **主観ラベル Y (`data/labelset.json`)**:
-  - 形式: `{"cols": 10, "data": {"example-001": {"subjectId": {"labels": [0.2, 0.6, 1.0, ...], "survey": {...}}}}}`
+  - 形式: `{"cols": 8, "data": {"example-001": {"subjectId": {"labels": [0.2, 0.6, 1.0, ...], "survey": {...}}}}}`
   - Module C のUIで生成されファイルに保存されます。複数被験者(subjectId)をサポートするため入れ子構造になっています。分析しやすいよう、ラベル配列とアンケート回答をセットで保存します。Trainer等では特定ユーザーのラベルとして利用されます。UIコンポーネント（checkboxes等）の値は `0.0` または `1.0` のフラットな浮動小数点配列としてエンコードされます。
 - **学習済みモデル・状態**:
   - `data/scaler.pkl`: StandardScalerのパラメータ。新規推論時の正規化に必要。
