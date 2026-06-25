@@ -34,14 +34,14 @@ FLUENT/
   - Chroma Feature (7次元): 12音階の強さの分布（最初の7半音分）。
   抽出された全セグメントの特徴量は `StandardScaler` で一括して標準化（平均0、分散1）され、`data/dataset.json`（A-MAP形式）とスケーラーのパラメータが `data/scaler.pkl` に保存されます。
 - **Module C (node/server.js, node/public/)**
-  - **Main UI (`public/index.html`)**: `wavesurfer.js` を用いたオーディオ再生機能と、`data/config.json` に基づき動的生成されるラベル入力フォーム（color, dropdown, slider, checkboxes 等）を提供します。動的フォームの生成時、checkboxesなどのタイプは `0.0` または `1.0` のフラットな浮動小数点配列としてエンコード/デコードされます。DOMの描画最適化のため `DocumentFragment` を使用してリフローを最小限に抑えています。未ラベルセグメントのAIサジェスト機能も統合されています。
+  - **Main UI (`public/index.html`)**: `<audio>` タグを用いたオーディオ再生機能と、`data/config.json` に基づき動的生成されるラベル入力フォーム（color, dropdown, slider, checkboxes 等）を提供します。動的フォームの生成時、checkboxesなどのタイプは `0.0` または `1.0` のフラットな浮動小数点配列としてエンコード/デコードされます。DOMの描画最適化のため `DocumentFragment` を使用してリフローを最小限に抑えています。未ラベルセグメントのAIサジェスト機能も統合されています。
   - **API Server (`server.js`)**: イベントループのブロッキングを避けるため `fs/promises` による非同期I/Oと、`child_process.spawn` によるPythonスクリプトの非同期呼び出しでオーケストレーションを行います。`ALLOWED_ORIGINS` 環境変数を用いた制限付きCORSポリシー（デフォルト `http://localhost:5173`）を実装。Pythonプロセスから標準出力（stdout）経由でJSON出力される学習進捗を傍受し、Server-Sent Events (SSE) でリアルタイムにUIへストリーミングします。また、`labelset.json` の自動バックアップ、学習の中断（SIGTERM送信）やモデルのリセット、ツールによる音声追加後の自動的な特徴量抽出パイプラインの連鎖呼び出し、特定被験者ごとのラベルフィルタリング、アンケートの保存・取得（`/api/survey`）などをサポートします。
 - **Module D (python/train.py, python/predict.py)**
   - **Trainer**: MLPRegressor等を用い、`dataset.json` (X) と `labelset.json` (Y) をマッピングするモデルを学習します。過学習を防ぐためL2正則化（alpha）を適用し、データサイズに応じて最適化アルゴリズム（lbfgs/adam）を動的に切り替えます。学習途中での安全な中断（SIGTERMによる途中保存）や、既存モデルからの学習再開（resume）に対応しています。C実装ループであっても標準出力を横取り(`VerboseCapture`)してJSON形式に整形し、Nodeサーバーへ進行状況を伝えます。
   - **Predictor**: `extractor.py`の`scaler.pkl`と`train.py`の`model.pkl`を用いて、新たな音声に対するラベルを推論します。`--id` 引数により特定セグメントのみ推論する効率的なフィルタリングが可能。推論結果は、システムの破綻を防ぐため常に `[0.0, 1.0]` の範囲にクリッピング（外挿対策）してJSON形式で出力されます。
 - **Tools (Downloader, VAD, Processor)**
   スタンドアロンのYouTubeダウンロードおよびセグメンテーションツール（`/api/tools/*` および `public/downloader.html`）。
-  - **`main.py`**: 楽曲の特徴量（クロマとMFCC）を時間軸でスタックし、過去の文脈を考慮した「自己回帰行列」アプローチによる凝集型クラスタリングで音楽構造（イントロ、Aメロ、サビなど）の境界を自動検出します。また、クロマ特徴量の時間平均とプロファイル照合から調（Key）とコード（Chords）を推定し、構造メタデータを `data/segments/segments.json` や `dataset.json` に出力します。
+  - **`main.py`** (ルートディレクトリ): YouTubeからのダウンロード、楽曲の特徴量（クロマとMFCC）を時間軸でスタックし、過去の文脈を考慮した「自己回帰行列」アプローチによる凝集型クラスタリングで音楽構造（イントロ、Aメロ、サビなど）の境界を自動検出します。また、クロマ特徴量の時間平均とプロファイル照合から調（Key）とコード（Chords）を推定し、構造メタデータを `data/segments/segments.json` や `dataset.json` に出力します。Node.jsサーバーの `/api/youtube` エンドポイントから自動セグメンテーション用としてトリガーされます。
   - **`downloader_tool.py`**: `yt-dlp` を使用しYouTube等から音声を `data/tmp/` にダウンロード。
   - **`vad_tool.py`**: `librosa` を用いて音声区間(VAD)を検出し、無音部分を除外した領域を特定します。
   - **`processor_tool.py`**: `pydub` を用いて指定領域をクロップし、ラウドネス正規化（loudnorm）を適用後、`data/segments/` に `VideoTitle_NNN.wav` の形式で保存します。
