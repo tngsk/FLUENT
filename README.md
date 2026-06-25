@@ -27,7 +27,7 @@ FLUENT/
 - **Module A (python/segmenter.py)**
   `data/raw_audio/` にあるWAVファイルから、人間の聴覚特性に近いMFCC（メル周波数ケプストラム係数）を抽出し、凝集型クラスタリング (Agglomerative Clustering) を用いて音響的に類似した部分をグループ化することで、音声を自動的に「自然な切れ目」で分割します。デフォルトでは約2秒粒度で分割され、`data/segments/` に `example-NNN.wav` の形式で出力されます。
 - **Module B (python/extractor.py)**
-  `data/segments/` のWAVファイルから、機械学習モデルへの入力として使用する26次元の物理特徴量を抽出します。構成は以下の通りです：
+  `data/segments/` のWAVファイルから、機械学習モデルへの入力として使用する26次元の物理特徴量を抽出します。なお、0.1秒未満の音声セグメントは抽出対象外として除外されます。構成は以下の通りです：
   - MFCC (12次元): 第0係数（音量に依存する成分）を除外し、音色の特性に焦点を当てたもの。
   - Spectral Features (4次元): スペクトルの形状（Centroid, Flatness, Rolloff, Bandwidth）。
   - Theoretical Features (3次元): 音楽理論的な特徴（Tempo, Key, Mode）。
