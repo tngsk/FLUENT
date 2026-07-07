@@ -62,6 +62,22 @@ app.get("/api/config", async (req, res) => {
   }
 });
 
+app.get("/api/survey-config", async (req, res) => {
+  try {
+    const configPath = path.join(DATA_DIR, "survey_config.json");
+    try {
+      await fs.access(configPath, constants.F_OK);
+      const data = await fs.readFile(configPath, "utf8");
+      res.json(JSON.parse(data));
+    } catch {
+      // Return null or empty if file doesn't exist
+      res.json(null);
+    }
+  } catch (err) {
+    res.status(500).json({ error: "Failed to read survey config" });
+  }
+});
+
 // data/segments/ にある WAV ファイルの ID 一覧を返す（拡張子なし・ソート済み）
 app.get("/api/segments", async (req, res) => {
   try {
