@@ -424,116 +424,7 @@
         </p>
 
         <form id="survey-form" onchange="updateSurveyProgress()">
-          <!-- BFI-2 -->
-          <div class="survey-section" id="section-bfi">
-            <h2>○ あなた自身について</h2>
-            <p class="subtitle" style="margin-bottom: 1rem">
-              各項目がどの程度あなた自身に当てはまるか選択してください。
-            </p>
-          </div>
-
-          <!-- 基本属性 -->
-          <div class="survey-section">
-            <h2>○ 基本属性</h2>
-            <div class="question-item">
-              <div class="question-text">1. 年齢</div>
-              <input
-                type="number"
-                name="attr_age"
-                class="input-text"
-                placeholder="例: 22"
-                required
-                oninput="updateSurveyProgress()"
-              />
-            </div>
-            <div class="question-item">
-              <div class="question-text">2. 性別</div>
-              <div class="likert-scale">
-                <label class="likert-option"
-                  ><input
-                    type="radio"
-                    name="attr_gender"
-                    value="male"
-                    required
-                  /><span>男性</span></label
-                >
-                <label class="likert-option"
-                  ><input type="radio" name="attr_gender" value="female" /><span
-                    >女性</span
-                  ></label
-                >
-                <label class="likert-option"
-                  ><input type="radio" name="attr_gender" value="other" /><span
-                    >その他</span
-                  ></label
-                >
-              </div>
-            </div>
-            <div class="question-item">
-              <div class="question-text">3. 音楽を聴く頻度</div>
-              <div class="likert-scale">
-                <label class="likert-option"
-                  ><span class="likert-label">全く聴かない</span
-                  ><input
-                    type="radio"
-                    name="attr_freq"
-                    value="1"
-                    required
-                  /><span>1</span></label
-                >
-                <label class="likert-option"
-                  ><input type="radio" name="attr_freq" value="2" /><span
-                    >2</span
-                  ></label
-                >
-                <label class="likert-option"
-                  ><input type="radio" name="attr_freq" value="3" /><span
-                    >3</span
-                  ></label
-                >
-                <label class="likert-option"
-                  ><input type="radio" name="attr_freq" value="4" /><span
-                    >4</span
-                  ></label
-                >
-                <label class="likert-option"
-                  ><span class="likert-label">常に聴いている</span
-                  ><input type="radio" name="attr_freq" value="5" /><span
-                    >5</span
-                  ></label
-                >
-              </div>
-            </div>
-            <div class="question-item">
-              <div class="question-text">4. どんな時に音楽を聴いているか</div>
-              <input
-                type="text"
-                name="attr_context"
-                class="input-text"
-                placeholder="例: 通学中、リラックスしたい時など"
-                required
-                oninput="updateSurveyProgress()"
-              />
-            </div>
-          </div>
-
-          <!-- 音楽ジャンル -->
-          <div class="survey-section" id="section-genre">
-            <h2>○ 音楽ジャンル</h2>
-            <p class="subtitle" style="margin-bottom: 1rem">
-              各ジャンルの好き嫌いについてお答えください（1:嫌い 〜 5:好き）。
-            </p>
-          </div>
-
-          <!-- 音楽特徴量 -->
-          <div class="survey-section" id="section-features">
-            <h2>○ 音楽の趣味・趣向について</h2>
-          </div>
-
-          <!-- 歌詞・想像力・機能・経験 (小カテゴリ) -->
-          <div class="survey-section" id="section-others"></div>
-
-          <div style="text-align: center; padding: 2rem 0">
+          <div id="survey-finish-wrapper" style="text-align: center; padding: 2rem 0">
             <button
               type="button"
               id="survey-finish-btn"
@@ -694,68 +585,13 @@
           return r.json().catch(() => null); // JSONパース失敗時も null を返す
         });
 
-      const SURVEY_CONFIG = {
-        bfi: [
-          "無口な方だ。",
-          "思いやりがあり、優しい。",
-          "行き当たりばったりな方だ。",
-          "多くの悩みごとを抱えている。",
-          "芸術、音楽、文学に魅了されている。",
-          "上に立つ方で、リーダーとして活動する。",
-          "他人を見下すことがある。",
-          "なかなか作業に取り掛かることができない。",
-          "憂うつになり、落胆する方だ。",
-          "抽象的な知識にはほとんど関心がない。",
-          "活力にあふれている。",
-          "人々のいちばん良いところを思い浮かべる。",
-          "ちゃんとして、いつも周りから当てにされる。",
-          "情緒が安定しおり、簡単には取り乱さない。",
-          "個性的で、新しいアイデアを思いつく。",
-        ],
-        genre: [
-          "ロック",
-          "ポップス",
-          "クラッシック",
-          "ジャズ",
-          "ヒップホップ",
-          "EDM",
-          "アニメ・ゲーム音楽",
-          "映画音楽・サントラ",
-          "K-POP",
-          "ボーカロイド",
-          "オルタナティブ・インディー",
-        ],
-        features: [
-          "テンポが速い音楽が好き",
-          "静かで落ち着いた音楽が好き",
-          "メロディがはっきりしている音楽が好き",
-          "リズムが複雑な音楽が好き",
-          "インストゥルメンタル（歌なし）が好き",
-          "明るい曲が好き",
-          "切ない・暗い曲が好き",
-          "テンションの高い曲が好き",
-          "ゆったりした曲が好き",
-        ],
-        lyrics: [
-          "曲を聴くとき、歌詞の内容をよく注意して聴く",
-          "歌詞の良し悪しは、その曲を好きになるかどうかに影響する",
-        ],
-        imagination: [
-          "音楽を聴くと、頭の中で映像が浮かぶことが多い",
-          "音楽を聴くと、その曲に合った“色”のイメージが思い浮かぶ",
-        ],
-        function: [
-          "気分を変えたい時に、意識的に音楽を選んで聴く",
-          "集中したい時に、決まって聴く音楽がある",
-        ],
-        experience: [
-          "家族に音楽経験者（楽器・歌・作曲など）はいますか",
-          "幼少期、家庭で音楽が流れていることが多かった",
-          "幼少期、家族と一緒に音楽を聴いたり歌ったりする機会が多かった",
-        ],
-      };
+            async function buildSurvey() {
+        const surveyConfig = await api("GET", "/api/survey-config");
 
-      function buildSurvey() {
+        if (!surveyConfig || surveyConfig.length === 0) {
+           return false;
+        }
+
         const createLikert = (
           name,
           text,
@@ -792,60 +628,81 @@
             </div>`;
         };
 
-        const bfiCont = document.getElementById("section-bfi");
-        if (bfiCont.children.length <= 2) {
-          SURVEY_CONFIG.bfi.forEach(
-            (q, i) =>
-              (bfiCont.innerHTML += createLikert(`bfi_${i}`, `${i + 1}. ${q}`)),
-          );
-          const genCont = document.getElementById("section-genre");
-          SURVEY_CONFIG.genre.forEach(
-            (q, i) =>
-              (genCont.innerHTML += createLikert(
-                `genre_${i}`,
-                `${i + 1}. ${q}`,
-                "嫌い",
-                "好き",
-              )),
-          );
-          const featCont = document.getElementById("section-features");
-          SURVEY_CONFIG.features.forEach(
-            (q, i) =>
-              (featCont.innerHTML += createLikert(
-                `feat_${i}`,
-                `${i + 1}. ${q}`,
-              )),
-          );
-          const otherCont = document.getElementById("section-others");
-          otherCont.innerHTML +=
-            "<h3>○ 歌詞重視</h3>" +
-            SURVEY_CONFIG.lyrics
-              .map((q, i) => createLikert(`lyrics_${i}`, `${i + 1}. ${q}`))
-              .join("");
-          otherCont.innerHTML +=
-            '<h3 style="margin-top:1.5rem">○ 想像力</h3>' +
-            SURVEY_CONFIG.imagination
-              .map((q, i) => createLikert(`imag_${i}`, `${i + 1}. ${q}`))
-              .join("");
-          otherCont.innerHTML +=
-            '<h3 style="margin-top:1.5rem">○ 音楽の機能的利用</h3>' +
-            SURVEY_CONFIG.function
-              .map((q, i) => createLikert(`func_${i}`, `${i + 1}. ${q}`))
-              .join("");
-          otherCont.innerHTML +=
-            '<h3 style="margin-top:1.5rem">○ 音楽経験</h3>' +
-            SURVEY_CONFIG.experience
-              .map((q, i) =>
-                createLikert(
-                  `exp_${i}`,
-                  `${i + 1}. ${q}`,
-                  "当てはまらない",
-                  "当てはまる",
-                  2,
-                ),
-              )
-              .join("");
-        }
+        const form = document.getElementById("survey-form");
+
+        // Remove hardcoded static sections
+        const staticSections = form.querySelectorAll(".survey-section");
+        staticSections.forEach(el => el.remove());
+
+        // Create base attribute section dynamically if needed or keep static?
+        // Actually, the prompt says "user survey is hardcoded, separate the survey function so it can be added when needed and its content can be modified by the survey configuration file."
+        // We'll prepend the static user attributes here, or let's create a container for dynamic sections.
+        let dynamicSectionsHTML = "";
+
+        // We add the base attributes back as a static string for basic demographic data.
+        dynamicSectionsHTML += `
+          <div class="survey-section" id="section-attributes">
+            <h2>○ 基本属性</h2>
+            <div class="question-item">
+              <div class="question-text">1. 年齢</div>
+              <input
+                type="number"
+                name="attr_age"
+                class="input-text"
+                placeholder="例: 22"
+                required
+                oninput="updateSurveyProgress()"
+              />
+            </div>
+            <div class="question-item">
+              <div class="question-text">2. 性別</div>
+              <div class="likert-scale">
+                <label class="likert-option"><input type="radio" name="attr_gender" value="male" required /><span>男性</span></label>
+                <label class="likert-option"><input type="radio" name="attr_gender" value="female" /><span>女性</span></label>
+                <label class="likert-option"><input type="radio" name="attr_gender" value="other" /><span>その他</span></label>
+              </div>
+            </div>
+            <div class="question-item">
+              <div class="question-text">3. 音楽を聴く頻度</div>
+              <div class="likert-scale">
+                <label class="likert-option"><span class="likert-label">全く聴かない</span><input type="radio" name="attr_freq" value="1" required /><span>1</span></label>
+                <label class="likert-option"><input type="radio" name="attr_freq" value="2" /><span>2</span></label>
+                <label class="likert-option"><input type="radio" name="attr_freq" value="3" /><span>3</span></label>
+                <label class="likert-option"><input type="radio" name="attr_freq" value="4" /><span>4</span></label>
+                <label class="likert-option"><span class="likert-label">常に聴いている</span><input type="radio" name="attr_freq" value="5" /><span>5</span></label>
+              </div>
+            </div>
+            <div class="question-item">
+              <div class="question-text">4. どんな時に音楽を聴いているか</div>
+              <input type="text" name="attr_context" class="input-text" placeholder="例: 通学中、リラックスしたい時など" required oninput="updateSurveyProgress()" />
+            </div>
+          </div>
+        `;
+
+        surveyConfig.forEach(section => {
+           dynamicSectionsHTML += `<div class="survey-section" id="section-${section.id}">`;
+           dynamicSectionsHTML += `<h2>${section.title}</h2>`;
+
+           if (section.type === "likert") {
+              section.questions.forEach((q, i) => {
+                 dynamicSectionsHTML += createLikert(
+                    `${section.id}_${i}`,
+                    `${i + 1}. ${q}`,
+                    section.options[0],
+                    section.options[1],
+                    section.scale
+                 );
+              });
+           }
+
+           dynamicSectionsHTML += `</div>`;
+        });
+
+        // Insert dynamic sections before the finish button wrapper
+        const btnWrapper = document.getElementById("survey-finish-wrapper");
+        btnWrapper.insertAdjacentHTML('beforebegin', dynamicSectionsHTML);
+
+        return true;
       }
 
       function updateSurveyProgress() {
@@ -916,9 +773,17 @@
           await init();
         } else {
           // 未回答ならアンケート画面へ
-          document.getElementById("survey-screen").hidden = false;
-          buildSurvey();
-          updateSurveyProgress();
+          const hasSurvey = await buildSurvey();
+          if (hasSurvey) {
+            document.getElementById("survey-screen").hidden = false;
+            updateSurveyProgress();
+          } else {
+            // もしアンケート設定がなければアンケートをスキップしてラベリング画面へ
+            surveyData = {};
+            document.getElementById("survey-screen").hidden = true;
+            document.getElementById("main-app").hidden = false;
+            await init();
+          }
         }
       }
 
