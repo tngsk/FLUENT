@@ -34,8 +34,8 @@ FLUENT/
   - Chroma Feature (7次元): 12音階の強さの分布（最初の7半音分）。
   抽出された全セグメントの特徴量は `StandardScaler` で一括して標準化（平均0、分散1）され、`data/dataset.json`（A-MAP形式）とスケーラーのパラメータが `data/scaler.pkl` に保存されます。短すぎるセグメント（0.1秒未満）は特徴量抽出からスキップされます。
 - **Module C (node/server.js, node/public/)**
-  - **Main UI (`public/index.html`)**: `<audio>` タグを用いたオーディオ再生機能と、`data/config.json` に基づき動的生成されるラベル入力フォーム（color, dropdown, slider, checkboxes 等）を提供します。動的フォームの生成時、checkboxesなどのタイプは `0.0` または `1.0` のフラットな浮動小数点配列としてエンコード/デコードされます。DOMの描画最適化のため `DocumentFragment` を使用してリフローを最小限に抑えています。未ラベルセグメントのAIサジェスト機能も統合されています。
-  - **API Server (`server.js`)**: イベントループのブロッキングを避けるため `fs/promises` による非同期I/Oと、`child_process.spawn` によるPythonスクリプトの非同期呼び出しでオーケストレーションを行います。WebSocketsに依存せず直接 `app.listen()` で起動し、`ALLOWED_ORIGINS` 環境変数を用いた制限付きCORSポリシー（デフォルト `http://localhost:5173`）を実装。Pythonプロセスから標準出力（stdout）経由でJSON出力される学習進捗を傍受し、Server-Sent Events (SSE) でリアルタイムにUIへストリーミングします。また、`labelset.json` の自動バックアップ、学習の中断（SIGTERM送信）やモデルのリセット、ツールによる音声追加後の自動的な特徴量抽出パイプラインの連鎖呼び出し（`/api/tools/process` 成功後の `extractor.py` の実行など）、特定被験者ごとのラベルフィルタリング、アンケートの保存・取得（`/api/survey`）などをサポートします。
+  - **Main UI (`public/index.html`)**: `<audio>` タグを用いたオーディオ再生機能と、`data/config.json` に基づき動的生成されるラベル入力フォーム（color, dropdown, slider, checkboxes 等）を提供します。動的フォームの生成時、checkboxesなどのタイプは `0.0` または `1.0` のフラットな浮動小数点配列としてエンコード/デコードされます。DOMの描画最適化のため `DocumentFragment` を使用してリフローを最小限に抑えています。未ラベルセグメントのAIサジェスト機能も統合されています。また、`data/survey_config.json` に基づく動的なアンケート画面を提供し、設定が空または存在しない場合はアンケート画面を自動的にスキップします。
+  - **API Server (`server.js`)**: イベントループのブロッキングを避けるため `fs/promises` による非同期I/Oと、`child_process.spawn` によるPythonスクリプトの非同期呼び出しでオーケストレーションを行います。WebSocketsに依存せず直接 `app.listen()` で起動し、`ALLOWED_ORIGINS` 環境変数を用いた制限付きCORSポリシー（デフォルト `http://localhost:5173`）を実装。Pythonプロセスから標準出力（stdout）経由でJSON出力される学習進捗を傍受し、Server-Sent Events (SSE) でリアルタイムにUIへストリーミングします。また、`labelset.json` の自動バックアップ、学習の中断（SIGTERM送信）やモデルのリセット、ツールによる音声追加後の自動的な特徴量抽出パイプラインの連鎖呼び出し（`/api/tools/process` 成功後の `extractor.py` の実行など）、特定被験者ごとのラベルフィルタリング、動的アンケート設定の提供（`/api/survey-config`）やアンケートの保存・取得（`/api/survey`）などをサポートします。
 - **Module D (python/train.py, python/predict.py)**
   - **Trainer**: MLPRegressor等を用い、`dataset.json` (X) と `labelset.json` (Y) をマッピングするモデルを学習します。過学習を防ぐためL2正則化（alpha）を適用し、データサイズに応じて最適化アルゴリズム（lbfgs/adam）を動的に切り替えます。学習途中での安全な中断（SIGTERMによる途中保存）や、既存モデルからの学習再開（resume）に対応しています。C実装ループであっても標準出力を横取り(`VerboseCapture`)してJSON形式に整形し、Nodeサーバーへ進行状況を伝えます。
   - **Predictor**: `extractor.py`の`scaler.pkl`と`train.py`の`model.pkl`を用いて、新たな音声に対するラベルを推論します。`--id` 引数により特定セグメントのみ推論する効率的なフィルタリングが可能。推論結果は、システムの破綻を防ぐため常に `[0.0, 1.0]` の範囲にクリッピング（外挿対策）してJSON形式で出力されます。
@@ -60,7 +60,10 @@ FLUENT/
   - Extractorが出力し、Trainer/Predictorが読み込みます。すべての値は標準化(Standardization)されています。また、`main.py` などの自動処理により、`global_key` および `global_chords` も追加記録されます。
 - **主観ラベル Y (`data/labelset.json`)**:
   - 形式: `{"cols": 8, "data": {"example-001": {"subjectId": {"labels": [0.2, 0.6, 1.0, ...], "survey": {...}}}}}`
-  - Module C のUIで生成されファイルに保存されます。複数被験者(subjectId)をサポートするため入れ子構造になっています。分析しやすいよう、ラベル配列とアンケート回答をセットで保存します。Trainer等では特定ユーザーのラベルとして利用されます。UIコンポーネント（checkboxes等）の値は `0.0` または `1.0` のフラットな浮動小数点配列としてエンコードされます。
+  - Module C のUIで生成されファイルに保存されます。複数被験者(subjectId)をサポートするため入れ子構造になっています。分析しやすいよう、ラベル配列とアンケート回答をセットで保存します。Trainer等では特定ユーザーのラベルとして利用されます。UIコンポーネント（checkboxes等）の値は `0.0` または `1.0` のフラットな浮動小数点配列としてエンコードされます。また、アンケートデータは `/api/survey` を通じて `data/survey_${subjectId}.json` としても個別に保存・取得されます。
+- **動的アンケート設定 (`data/survey_config.json`)**:
+  - 形式: `[{"id": "bfi", "title": "性格特性", "type": "likert", ...}, ...]`
+  - フロントエンドのアンケート画面を動的に生成するための設定ファイルです。存在しないか空の場合はアンケート画面がスキップされます。
 - **学習済みモデル・状態**:
   - `data/scaler.pkl`: StandardScalerのパラメータ。新規推論時の正規化に必要。
   - `data/model.pkl`: MLPの重みデータ。推論や学習の再開(`resume`)に使用。
