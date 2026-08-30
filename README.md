@@ -47,6 +47,7 @@ FLUENT/
   - **`processor_tool.py`**: `pydub` を用いて指定領域をクロップし、ラウドネス正規化（loudnorm）を適用後、`data/segments/` に `VideoTitle_NNN.wav` の形式で保存します。
   - **`youtube_dl.py`**: YouTube等のURLから直接指定範囲（開始時間・長さ）をダウンロードし、ラウドネス正規化を適用して `data/segments/` に保存します。
   - **`normalize_existing_audio.py`**: `data/segments/` に存在するすべてのWAVファイルに対して一括でラウドネス正規化（loudnorm）を適用し、音量を統一するユーティリティスクリプト。
+  - **`generate_dummy_audio.py`**: テストや初期セットアップ用に、`data/raw_audio/` へダミーの音源（低周波音、高周波音、ノイズ）を自動生成するスクリプト。`setup_all.sh` の実行時に利用されます。
 
 ## プロセスごとのデータ形式
 
